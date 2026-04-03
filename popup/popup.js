@@ -1,6 +1,6 @@
 /**
  * Review Assistant - Prototype Review Tool
- * Copyright (c) 2026 g7e6 dengqu
+ * Copyright (c) 2026 dengqu
  * Licensed under MIT License
  * https://github.com/dengqu-netizen/review-extension
  */
