@@ -83,6 +83,12 @@
 
 ![评审面板](screenshots/02-review-panel.png)
 
+#### 导出结果
+
+一键导出 Markdown 格式的优化待办表：
+
+![导出 Markdown](screenshots/03-export-markdown.png)
+
 ### 📋 技术栈
 
 - **Manifest V3**：使用最新的 Chrome 扩展规范
