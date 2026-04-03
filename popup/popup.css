@@ -1,0 +1,192 @@
+/* Review Assistant - Simple Popup Styles */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 360px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  color: #2d3748;
+  background: #f7fafc;
+}
+
+.container {
+  padding: 24px;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.logo {
+  margin-bottom: 4px;
+  position: relative;
+  display: inline-block;
+}
+
+.coin-bg {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: #f5f5f9;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 0;
+}
+
+.logo img {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+h1 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a202c;
+  position: relative;
+  z-index: 1;
+}
+
+/* Main Section (合并的介绍和快速开始) */
+.main-section {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.description-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #4a5568;
+  margin-bottom: 12px;
+}
+
+.instruction {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  background: #f7fafc;
+  border-radius: 6px;
+  border-left: 3px solid #667eea;
+}
+
+.instruction-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.instruction-text {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.instruction-text strong {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.instruction-en {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #a0aec0;
+}
+
+/* Privacy */
+.privacy {
+  background: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.privacy h2 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 8px;
+}
+
+.privacy p {
+  font-size: 13px;
+  line-height: 1.8;
+  margin-bottom: 8px;
+}
+
+.privacy p:last-child {
+  margin-bottom: 0;
+}
+
+.privacy-text {
+  font-size: 11px;
+  color: #a0aec0;
+  line-height: 1.6;
+}
+
+.disclaimer {
+  font-size: 10px;
+  color: #cbd5e0;
+  line-height: 1.5;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.privacy-en {
+  font-size: 12px;
+  color: #a0aec0;
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.github-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #4a5568;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.github-link:hover {
+  color: #667eea;
+}
+
+.github-link svg {
+  width: 16px;
+  height: 16px;
+}
+
+.version {
+  font-size: 11px;
+  color: #a0aec0;
+  background: #edf2f7;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}

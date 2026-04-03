@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Review Assistant</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Logo & Title -->
+    <div class="header">
+      <div class="logo">
+        <div class="coin-bg"></div>
+        <img src="../icons/icon48.png" alt="Logo" width="36" height="36">
+      </div>
+      <h1 data-zh="评审助手" data-en="Review Assistant">评审助手</h1>
+    </div>
+
+    <!-- Description & Quick Start (合并) -->
+    <div class="main-section">
+      <p class="description-text" data-zh="为 HTML 原型页面添加评审标注，自动生成优化待办表。" data-en="Add review annotations to HTML prototypes and generate optimization checklists.">为 HTML 原型页面添加评审标注，自动生成优化待办表。</p>
+
+      <div class="instruction">
+        <div class="instruction-icon">⌨️</div>
+        <div class="instruction-text">
+          <span data-zh="双击 ESC 键呼出评审面板" data-en="Double press ESC to open review panel"><strong>双击 ESC 键</strong>呼出评审面板</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Privacy -->
+    <div class="privacy">
+      <h2 data-zh="隐私声明" data-en="Privacy">隐私声明</h2>
+      <p class="privacy-text" data-zh="✓ 所有数据仅存储在本地浏览器&#10;✓ 不收集任何个人信息&#10;✓ 不上传到任何服务器" data-en="✓ All data stored locally in browser&#10;✓ No personal information collected&#10;✓ No data uploaded to servers">
+        ✓ 所有数据仅存储在本地浏览器<br>
+        ✓ 不收集任何个人信息<br>
+        ✓ 不上传到任何服务器
+      </p>
+      <p class="disclaimer" data-zh="本插件仅供合法用途，使用风险自担，开发者不对使用导致的任何损失负责。" data-en="This extension is for lawful use only. Use at your own risk. The developer is not responsible for any losses caused by its use.">
+        本插件仅供合法用途，使用风险自担，开发者不对使用导致的任何损失负责。
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <a href="https://github.com/dengqu-netizen/review-extension" target="_blank" class="github-link">
+        <svg width="16" height="16" fill="currentColor">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0016 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        GitHub
+      </a>
+      <span class="version">v2.4.0</span>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
