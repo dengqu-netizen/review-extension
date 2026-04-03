@@ -119,14 +119,31 @@
 
 ## English
 
-### ✨ Features
+### ✨ Core Features
 
-- 🎯 **Interactive Annotations**: Click directly on HTML prototype pages to add review annotations
-- 📝 **Multiple Comment Types**: Support for issues, suggestions, decisions, and pending confirmations
+#### Visual Annotation
+- 🎯 **Click to Annotate**: Click any page element to add review comments with auto-generated numbered badges
+- 🔗 **Bidirectional Linking**: Click badge to highlight comment card, click card to locate element with reference box
+- 📍 **Precise Positioning**: Uses CSS.escape + fallback strategy to handle special characters in selectors
+
+#### Comment Management
+- 📝 **Categorized Annotations**: Support for Issue/Suggestion/Decision/Pending types
 - 🎨 **Three Priority Levels**: P0 (Must Fix), P1 (Should Fix), P2 (Nice to Have)
-- 📊 **Auto-generate Checklists**: Export optimization checklists in Markdown format with one click
-- 🌍 **Bilingual Support**: Automatically switches interface language based on browser settings
-- 💾 **Local Storage**: All data stored locally in browser, no server uploads
+- ✏️ **Real-time Editing**: Edit, delete, locate operations with auto-save
+
+#### Data Persistence
+- 💾 **Smart Storage**: Project + filename based storage, survives server restarts/port changes
+- 🔄 **Marker Persistence**: Map-based marker references, annotations persist after exiting review mode
+- 📊 **One-Click Export**: Generate Markdown optimization checklists for design input
+
+#### Interaction Experience
+- 🎭 **Non-intrusive**: Highest z-index + isolated styles, no pollution to prototype pages
+- 🖱️ **Draggable Panel**: Review control panel can be dragged to avoid blocking content
+- 📱 **Side Drawer**: Comment list with frosted glass effect, elegant display
+- 📜 **Global Scroll Listener**: Capture mode listening covers all nested scroll containers
+
+#### Internationalization
+- 🌍 **Bilingual Support**: Auto-switches between Chinese and English based on browser language
 - 🎨 **Ancient Coin Design**: Chinese-style logo with circular exterior and square interior
 
 ### 🚀 Quick Start
@@ -156,15 +173,23 @@ Will be available for direct installation once published to Chrome Web Store.
 
 ### 📸 Screenshots
 
-- **Popup Interface**: Clean extension popup with usage instructions
-- **Review Panel**: Floating panel displaying all review annotations
-- **Annotation Bubbles**: Visual markers on page elements
+#### Popup Interface
 
-### 🎨 Design Philosophy
+Clean extension popup with ancient coin logo and usage instructions:
 
-- **Ancient Coin Logo**: Circular exterior with square interior, symbolizing the balance between standards (square) and flexibility (circle) in review work
-- **Chinese Calligraphy**: "评" character in KaiTi font, reflecting Chinese cultural aesthetics
-- **Clean Interface**: Compact layout highlighting core functionality
+![Popup Interface](screenshots/01-popup-interface.png)
+
+#### Review Panel
+
+Floating panel displaying all review annotations and action buttons:
+
+![Review Panel](screenshots/02-review-panel.png)
+
+#### Export Result
+
+One-click export to Markdown format optimization checklist:
+
+![Export Markdown](screenshots/03-export-markdown.png)
 
 ### 📋 Tech Stack
 
