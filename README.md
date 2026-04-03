@@ -71,12 +71,6 @@
 
 ### 📸 界面预览
 
-#### Popup 界面
-
-简洁的扩展弹窗，展示古钱币 logo 和使用说明：
-
-![Popup 界面](screenshots/01-popup-interface.png)
-
 #### 评审面板
 
 浮动面板，显示所有评审标注和操作按钮：
