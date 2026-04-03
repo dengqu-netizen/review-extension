@@ -2,7 +2,7 @@
  * Review Extension Background Service Worker
  * 原型评审标注工具 - 后台服务
  *
- * @author g7e6 dengqu
+ * @author dengqu
  * @version 1.0.0
  * @description 负责扩展生命周期管理和全局功能
  */

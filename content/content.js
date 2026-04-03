@@ -2,7 +2,7 @@
  * Review Extension Content Script V2
  * 评审标注浏览器扩展 - 内容脚本（架构重构版）
  *
- * @author g7e6 dengqu
+ * @author dengqu
  * @version 2.0.0
  * @description 为 HTML 原型页面提供交互式评审标注功能
  *
