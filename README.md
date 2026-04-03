@@ -173,23 +173,11 @@ Will be available for direct installation once published to Chrome Web Store.
 
 ### 📸 Screenshots
 
-#### Popup Interface
-
-Clean extension popup with ancient coin logo and usage instructions:
-
-![Popup Interface](screenshots/01-popup-interface.png)
-
 #### Review Panel
 
 Floating panel displaying all review annotations and action buttons:
 
-![Review Panel](screenshots/02-review-panel.png)
-
-#### Export Result
-
-One-click export to Markdown format optimization checklist:
-
-![Export Markdown](screenshots/03-export-markdown.png)
+![Review Panel](screenshots/02-review-panel-en.png)
 
 ### 📋 Tech Stack
 
