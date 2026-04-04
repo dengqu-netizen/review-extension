@@ -39,6 +39,7 @@
 - 🖱️ **拖拽面板**：评审操控面板可拖动，不遮挡内容
 - 📱 **右侧抽屉**：评论列表毛玻璃效果，优雅展示
 - 📜 **全局滚动监听**：捕获模式监听，覆盖所有嵌套滚动容器内的标记
+- 🌗 **自动主题切换**：检测页面周边颜色，自动切换亮色/暗色面板主题，适配不同背景
 
 #### 国际化支持
 - 🌍 **中英文双语**：根据浏览器语言自动切换界面语言
@@ -135,6 +136,7 @@
 - 🖱️ **Draggable Panel**: Review control panel can be dragged to avoid blocking content
 - 📱 **Side Drawer**: Comment list with frosted glass effect, elegant display
 - 📜 **Global Scroll Listener**: Capture mode listening covers all nested scroll containers
+- 🌗 **Auto Theme Switching**: Detects page surrounding colors and automatically switches between light/dark panel themes to adapt to different backgrounds
 
 #### Internationalization
 - 🌍 **Bilingual Support**: Auto-switches between Chinese and English based on browser language

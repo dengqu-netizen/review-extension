@@ -21,6 +21,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // 预留消息处理接口
   if (request.action === 'ping') {
     sendResponse({ status: 'ok' });
+    return true;
   }
+
   return true;
 });

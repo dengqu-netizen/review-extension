@@ -336,8 +336,7 @@
 
   // ==================== 面板周边颜色检测与主题切换 ====================
   /**
-   * 检测面板周边的颜色，判断应该使用亮色还是暗色主题
-   * 使用 CSS 检测算法（不完美，但能覆盖大多数情况）
+   * 检测面板周边区域的颜色，判断是否需要使用亮色主题
    * @returns {boolean} true = 使用亮色主题（周边是暗色），false = 使用暗色主题（周边是亮色）
    */
   function detectPanelSurroundingColor() {
@@ -345,33 +344,20 @@
 
     const rect = reviewPanel.getBoundingClientRect();
 
-    // 采样距离：平衡避开小元素和不超出目标区域
-    const sampleDistance = 50;
+    // 采样面板周边的多个点
     const samplePoints = [
-      // 面板底部（3个点）
-      { x: rect.left + rect.width * 0.25, y: rect.bottom + sampleDistance },
-      { x: rect.left + rect.width * 0.5, y: rect.bottom + sampleDistance },
-      { x: rect.left + rect.width * 0.75, y: rect.bottom + sampleDistance },
-
-      // 面板顶部（3个点）
-      { x: rect.left + rect.width * 0.25, y: rect.top - sampleDistance },
-      { x: rect.left + rect.width * 0.5, y: rect.top - sampleDistance },
-      { x: rect.left + rect.width * 0.75, y: rect.top - sampleDistance },
-
-      // 面板左侧（3个点）
-      { x: rect.left - sampleDistance, y: rect.top + rect.height * 0.25 },
-      { x: rect.left - sampleDistance, y: rect.top + rect.height * 0.5 },
-      { x: rect.left - sampleDistance, y: rect.top + rect.height * 0.75 },
-
-      // 面板右侧（3个点）
-      { x: rect.right + sampleDistance, y: rect.top + rect.height * 0.25 },
-      { x: rect.right + sampleDistance, y: rect.top + rect.height * 0.5 },
-      { x: rect.right + sampleDistance, y: rect.top + rect.height * 0.75 },
+      // 面板底部下方
+      { x: rect.left + rect.width / 2, y: rect.bottom + 20 },
+      // 面板左侧
+      { x: rect.left - 20, y: rect.top + rect.height / 2 },
+      // 面板右侧
+      { x: rect.right + 20, y: rect.top + rect.height / 2 },
+      // 面板顶部上方
+      { x: rect.left + rect.width / 2, y: rect.top - 20 },
     ];
 
     let totalBrightness = 0;
     let validSamples = 0;
-    const brightnessValues = [];
 
     samplePoints.forEach(point => {
       // 确保采样点在视口内
@@ -381,84 +367,36 @@
       }
 
       const element = document.elementFromPoint(point.x, point.y);
-      if (!element || element === reviewPanel || reviewPanel.contains(element)) {
-        return;
-      }
+      if (element && element !== reviewPanel && !reviewPanel.contains(element)) {
+        const bg = window.getComputedStyle(element).backgroundColor;
+        const brightness = calculateBrightness(bg);
 
-      // 向上查找父元素，寻找有效的背景色
-      let currentElement = element;
-      let attempts = 0;
-      let brightness = 255;
-      let foundValidColor = false;
-
-      while (currentElement && attempts < 6) {
-        const computedStyle = window.getComputedStyle(currentElement);
-        const bg = computedStyle.backgroundColor;
-        const bgImage = computedStyle.backgroundImage;
-        
-        // 获取元素尺寸
-        const elementRect = currentElement.getBoundingClientRect();
-        const elementArea = elementRect.width * elementRect.height;
-
-        brightness = calculateBrightness(bg);
-
-        // 判断是否是有效的背景色
         if (brightness < 255) {
-          if (bgImage && bgImage !== 'none') {
-            // 有背景图片，假设是中等亮度（150）
-            // 这样既不会太亮也不会太暗，让检测更保守
-            brightness = 150;
-            foundValidColor = true;
-            break;
-          } else if (elementArea > 1500) {
-            // 元素面积足够大
-            foundValidColor = true;
-            break;
-          }
+          totalBrightness += brightness;
+          validSamples++;
         }
-
-        currentElement = currentElement.parentElement;
-        attempts++;
-      }
-
-      if (foundValidColor && brightness < 255) {
-        brightnessValues.push(brightness);
-        totalBrightness += brightness;
-        validSamples++;
       }
     });
 
-    // 如果没有有效采样，默认使用暗色主题（适合大多数亮色背景）
     if (validSamples === 0) {
-      console.log('[Review Extension] No valid samples, using default dark theme');
-      return false;
+      // 如果没有有效采样，检查 body 背景色
+      const bodyBg = window.getComputedStyle(document.body).backgroundColor;
+      const bodyBrightness = calculateBrightness(bodyBg);
+      return bodyBrightness < 128;
     }
 
-    // 计算平均亮度
     const avgBrightness = totalBrightness / validSamples;
+    const isDark = avgBrightness < 128;
 
-    // 计算中位数（更稳定，不容易被极端值影响）
-    brightnessValues.sort((a, b) => a - b);
-    const medianBrightness = brightnessValues[Math.floor(brightnessValues.length / 2)];
-
-    // 使用中位数和平均值的加权平均（中位数权重更高）
-    const finalBrightness = medianBrightness * 0.7 + avgBrightness * 0.3;
-    const isDark = finalBrightness < 128;
-
-    console.log('[Review Extension] Panel surrounding detection (CSS):', {
-      avgBrightness: avgBrightness.toFixed(1),
-      medianBrightness: medianBrightness.toFixed(1),
-      finalBrightness: finalBrightness.toFixed(1),
+    console.log('[Review Extension] Panel surrounding detection:', {
+      avgBrightness,
       validSamples,
       isDark,
-      shouldUseLightTheme: isDark,
-      allValues: brightnessValues.map(v => v.toFixed(0)).join(', ')
+      shouldUseLightTheme: isDark
     });
 
-    return isDark;
+    return isDark; // 周边暗色 → 使用亮色主题
   }
-
-
 
   /**
    * 应用主题到面板（带平滑过渡）
@@ -484,14 +422,8 @@
    * 检测并切换主题（带平滑过渡）
    */
   function detectAndSwitchTheme() {
-    console.log('[Review Extension] detectAndSwitchTheme called');
-    try {
-      const shouldUseLightTheme = detectPanelSurroundingColor();
-      console.log('[Review Extension] shouldUseLightTheme:', shouldUseLightTheme);
-      applyTheme(shouldUseLightTheme);
-    } catch (error) {
-      console.error('[Review Extension] detectAndSwitchTheme error:', error);
-    }
+    const shouldUseLightTheme = detectPanelSurroundingColor();
+    applyTheme(shouldUseLightTheme);
   }
 
   // ==================== 状态管理 ====================
@@ -886,44 +818,28 @@
     commentDialog.innerHTML = `
       <div class="dq-review-dialog-header">${t('addComment')}</div>
       <div class="dq-review-dialog-body">
+        <div class="dq-review-form-group">
+          <label>${t('commentContent')}</label>
+          <textarea id="reviewCommentContent" class="dq-review-form-control" rows="5" placeholder="${t('commentPlaceholder')}"></textarea>
+        </div>
         <div class="dq-review-form-row">
           <div class="dq-review-form-group">
             <label>${t('type')}</label>
-            <div class="dq-custom-select" id="reviewCommentTypeWrapper">
-              <div class="dq-custom-select-trigger">
-                <span class="dq-custom-select-value">${t('typeIssue')}</span>
-                <svg class="dq-custom-select-arrow" width="12" height="12" viewBox="0 0 12 12">
-                  <path fill="currentColor" d="M6 9L1 4h10z"/>
-                </svg>
-              </div>
-              <div class="dq-custom-select-dropdown">
-                <div class="dq-custom-select-option" data-value="${t('typeIssue')}">${t('typeIssue')}</div>
-                <div class="dq-custom-select-option" data-value="${t('typeSuggestion')}">${t('typeSuggestion')}</div>
-                <div class="dq-custom-select-option" data-value="${t('typeDecision')}">${t('typeDecision')}</div>
-                <div class="dq-custom-select-option" data-value="${t('typePending')}">${t('typePending')}</div>
-              </div>
-            </div>
+            <select id="reviewCommentType" class="dq-review-form-control">
+              <option value="${t('typeIssue')}">${t('typeIssue')}</option>
+              <option value="${t('typeSuggestion')}">${t('typeSuggestion')}</option>
+              <option value="${t('typeDecision')}">${t('typeDecision')}</option>
+              <option value="${t('typePending')}">${t('typePending')}</option>
+            </select>
           </div>
           <div class="dq-review-form-group">
             <label>${t('priority')}</label>
-            <div class="dq-custom-select" id="reviewCommentPriorityWrapper">
-              <div class="dq-custom-select-trigger">
-                <span class="dq-custom-select-value">${t('p0')}</span>
-                <svg class="dq-custom-select-arrow" width="12" height="12" viewBox="0 0 12 12">
-                  <path fill="currentColor" d="M6 9L1 4h10z"/>
-                </svg>
-              </div>
-              <div class="dq-custom-select-dropdown">
-                <div class="dq-custom-select-option" data-value="P0">${t('p0')}</div>
-                <div class="dq-custom-select-option" data-value="P1">${t('p1')}</div>
-                <div class="dq-custom-select-option" data-value="P2">${t('p2')}</div>
-              </div>
-            </div>
+            <select id="reviewCommentPriority" class="dq-review-form-control">
+              <option value="P0">${t('p0')}</option>
+              <option value="P1">${t('p1')}</option>
+              <option value="P2">${t('p2')}</option>
+            </select>
           </div>
-        </div>
-        <div class="dq-review-form-group">
-          <label>${t('commentContent')} <span style="color:#ef4444;">*</span></label>
-          <textarea id="reviewCommentContent" class="dq-review-form-control" rows="5" placeholder="${t('commentPlaceholder')}"></textarea>
         </div>
       </div>
       <div class="dq-review-dialog-footer">
@@ -967,67 +883,17 @@
       saveComment(element);
     });
 
-    // 初始化自定义下拉框
-    initCustomSelects();
-
     document.getElementById('reviewCommentContent').focus();
-  }
-
-  /**
-   * 初始化所有自定义下拉框的交互逻辑
-   */
-  function initCustomSelects() {
-    document.querySelectorAll('.dq-custom-select').forEach(select => {
-      const trigger = select.querySelector('.dq-custom-select-trigger');
-      const dropdown = select.querySelector('.dq-custom-select-dropdown');
-      const valueDisplay = select.querySelector('.dq-custom-select-value');
-      const options = select.querySelectorAll('.dq-custom-select-option');
-
-      // 设置默认值
-      if (options.length > 0) {
-        select.dataset.value = options[0].dataset.value;
-        options[0].classList.add('dq-selected');
-      }
-
-      // 点击触发器，展开/收起下拉菜单
-      trigger.addEventListener('click', (e) => {
-        e.stopPropagation();
-        // 关闭其他已打开的下拉框
-        document.querySelectorAll('.dq-custom-select.dq-open').forEach(other => {
-          if (other !== select) other.classList.remove('dq-open');
-        });
-        select.classList.toggle('dq-open');
-      });
-
-      // 点击选项
-      options.forEach(option => {
-        option.addEventListener('click', (e) => {
-          e.stopPropagation();
-          select.dataset.value = option.dataset.value;
-          valueDisplay.textContent = option.textContent;
-          options.forEach(o => o.classList.remove('dq-selected'));
-          option.classList.add('dq-selected');
-          select.classList.remove('dq-open');
-        });
-      });
-    });
-
-    // 点击其他区域关闭下拉框
-    document.addEventListener('click', () => {
-      document.querySelectorAll('.dq-custom-select.dq-open').forEach(select => {
-        select.classList.remove('dq-open');
-      });
-    });
   }
 
   // ==================== 保存评论 ====================
   function saveComment(element) {
-    const type = document.getElementById('reviewCommentTypeWrapper').dataset.value || t('typeIssue');
-    const priority = document.getElementById('reviewCommentPriorityWrapper').dataset.value || 'P0';
+    const type = document.getElementById('reviewCommentType').value;
+    const priority = document.getElementById('reviewCommentPriority').value;
     const content = document.getElementById('reviewCommentContent').value.trim();
 
     if (!content) {
-      showToast(t('pleaseEnterContent'));
+      alert(t('pleaseEnterContent'));
       return;
     }
 
@@ -1602,13 +1468,13 @@
 
       document.getElementById('reviewDownloadMarkdownBtn').addEventListener('click', () => {
         downloadMarkdown(markdown);
-        showToast(t('fileDownloaded'));
+        alert(t('fileDownloaded'));
         closeDialog();
       });
 
       document.getElementById('reviewCopyMarkdownBtn').addEventListener('click', () => {
         copyToClipboard(markdown);
-        showToast(t('copiedToClipboard'));
+        alert(t('copiedToClipboard'));
         closeDialog();
       });
     }, 100);
@@ -1622,7 +1488,7 @@
     const day = String(today.getDate()).padStart(2, '0');
     const dateForFilename = `${year}-${month}-${day}`;
     const pageName = window.location.pathname.split('/').pop().replace('.html', '') || 'prototype';
-    const filename = `${pageName}-prototype-review-${dateForFilename}.md`;
+    const filename = `${pageName}-dq-review-${dateForFilename}.md`;
 
     const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -1653,18 +1519,21 @@
     const p1 = annotations.filter(a => a.priority === 'P1');
     const p2 = annotations.filter(a => a.priority === 'P2');
 
-    // 获取路径：file:// 协议取绝对路径，http(s) 协议取相对路径
     let fullPath = decodeURIComponent(window.location.pathname);
-    // file:// 协议下 pathname 就是完整绝对路径
-    // http(s) 协议下 pathname 是服务器相对路径（无法获取绝对路径）
     let savePath = '';
 
-    // 提取 HTML 所在目录，拼接 review 文件名
-    const dirMatch = fullPath.match(/^(.+)[\/\\][^\/\\]+\.html$/i);
-    if (dirMatch) {
-      savePath = `${dirMatch[1]}/${pageName}-prototype-review-${dateForFilename}.md`;
+    const prototypesMatch = fullPath.match(/^(.+)\/(03_prototypes?|prototypes?)\/([^\/]+)\.html$/);
+    if (prototypesMatch) {
+      const [, basePath, , fileName] = prototypesMatch;
+      savePath = `${basePath}/05_reviews/${fileName}-dq-review-${dateForFilename}.md`;
     } else {
-      savePath = `${pageName}-prototype-review-${dateForFilename}.md`;
+      const dirMatch = fullPath.match(/^(.+)\/([^\/]+)\/([^\/]+)\.html$/);
+      if (dirMatch) {
+        const [, parentPath] = dirMatch;
+        savePath = `${parentPath}/05_reviews/${pageName}-dq-review-${dateForFilename}.md`;
+      } else {
+        savePath = `05_reviews/${pageName}-dq-review-${dateForFilename}.md`;
+      }
     }
 
     let markdown = `<!--\n`;

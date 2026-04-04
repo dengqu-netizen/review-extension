@@ -104,14 +104,6 @@
   padding: 8px 12px;
   z-index: 2147483647;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-
-  /* 添加平滑过渡动效 */
-  transition: background 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
-}
-
-/* 面板内所有按钮和元素也添加过渡 */
-.dq-review-panel * {
-  transition: background 0.5s ease, color 0.5s ease, border-color 0.5s ease;
 }
 
 /* 落地动画：从顶部落下，一锤定音 */
@@ -247,11 +239,11 @@
 
 .dq-review-btn-primary {
   background: #667eea;
-  color: #ffffff;
+  color: white;
 }
 
 .dq-review-btn-primary:hover {
-  background: #5a6fd6;
+  background: #5568d3;
 }
 
 .dq-review-btn-secondary {
@@ -388,7 +380,7 @@
   margin-bottom: 6px !important;
   font-size: 13px !important;
   font-weight: 500 !important;
-  color: #9ca3af !important;
+  color: #374151 !important;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
   box-sizing: border-box !important;
 }
@@ -415,144 +407,25 @@
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
 }
 
-/* Custom Select Dropdown (Bootstrap-style) */
-.dq-custom-select {
-  all: initial !important;
-  position: relative !important;
-  display: block !important;
-  width: 100% !important;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-  font-size: 14px !important;
-}
-
-.dq-custom-select-trigger {
-  all: initial !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  width: 100% !important;
-  padding: 6px 10px !important;
-  background-color: #fff !important;
-  border: 1px solid #dee2e6 !important;
-  border-radius: 6px !important;
+select.dq-review-form-control {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-color: white !important;
+  padding-right: 36px !important;
   cursor: pointer !important;
-  font-family: inherit !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  color: #212529 !important;
-  line-height: 1.4 !important;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
-  box-sizing: border-box !important;
 }
 
-.dq-custom-select-trigger:hover {
-  border-color: #adb5bd !important;
-  background-color: #f8f9fa !important;
+select.dq-review-form-control:hover {
+  border-color: #9ca3af !important;
 }
 
-.dq-custom-select.dq-open .dq-custom-select-trigger {
+select.dq-review-form-control:focus {
   border-color: #667eea !important;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15) !important;
-  background-color: #fff !important;
-}
-
-.dq-custom-select-value {
-  all: initial !important;
-  font-family: inherit !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  color: #212529 !important;
-  line-height: 1.5 !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-}
-
-.dq-custom-select-arrow {
-  flex-shrink: 0 !important;
-  margin-left: 8px !important;
-  color: #6c757d !important;
-  transition: transform 0.2s ease !important;
-}
-
-.dq-custom-select.dq-open .dq-custom-select-arrow {
-  transform: rotate(180deg) !important;
-  color: #667eea !important;
-}
-
-.dq-custom-select-dropdown {
-  all: initial !important;
-  display: none !important;
-  position: absolute !important;
-  top: calc(100% + 4px) !important;
-  left: 0 !important;
-  right: 0 !important;
-  z-index: 1050 !important;
-  background-color: #fff !important;
-  border: 1px solid #dee2e6 !important;
-  border-radius: 6px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
-  padding: 4px 0 !important;
-  max-height: 200px !important;
-  overflow-y: auto !important;
-  box-sizing: border-box !important;
-}
-
-.dq-custom-select.dq-open .dq-custom-select-dropdown {
-  display: block !important;
-}
-
-.dq-custom-select-option {
-  all: initial !important;
-  display: block !important;
-  width: 100% !important;
-  padding: 6px 12px !important;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-  font-size: 12px !important;
-  font-weight: 400 !important;
-  color: #212529 !important;
-  line-height: 1.4 !important;
-  cursor: pointer !important;
-  transition: background-color 0.1s ease !important;
-  box-sizing: border-box !important;
-}
-
-.dq-custom-select-option:hover {
-  background-color: #e9ecef !important;
-}
-
-.dq-custom-select-option.dq-selected {
-  background-color: #667eea !important;
-  color: #fff !important;
-  font-weight: 500 !important;
-}
-
-.dq-custom-select-option.dq-selected:hover {
-  background-color: #5a6fd6 !important;
-}
-
-/* Light theme overrides for custom select */
-.dq-review-panel.dq-light-theme .dq-custom-select-trigger {
-  background-color: #f8f9fa !important;
-  border-color: #ced4da !important;
-  color: #212529 !important;
-}
-
-.dq-review-panel.dq-light-theme .dq-custom-select-value {
-  color: #212529 !important;
-}
-
-.dq-review-panel.dq-light-theme .dq-custom-select-dropdown {
-  background-color: #fff !important;
-  border-color: #ced4da !important;
-}
-
-.dq-review-panel.dq-light-theme .dq-custom-select-option {
-  color: #212529 !important;
-}
-
-.dq-review-panel.dq-light-theme .dq-custom-select-option:hover {
-  background-color: #e9ecef !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23667eea' d='M6 9L1 4h10z'/%3E%3C/svg%3E") !important;
 }
 
 textarea.dq-review-form-control {
@@ -1005,143 +878,5 @@ textarea.dq-review-form-control {
 .dq-review-comment-list-body::-webkit-scrollbar-thumb:hover,
 .dq-review-dialog-body::-webkit-scrollbar-thumb:hover,
 .dq-review-export-body::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
-}
-
-/* ==================== 亮色主题（适用于暗色页面） ==================== */
-/* 当页面是暗色时，使用亮色面板以保证对比度 */
-
-.dq-review-panel.dq-light-theme {
-  background: #ffffff;
-  border-color: #e5e7eb;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-}
-
-/* 亮色主题：拖动手柄 */
-.dq-review-panel.dq-light-theme .dq-review-panel-drag-handle {
-  color: rgba(0, 0, 0, 0.6);
-}
-
-/* 亮色主题：主按钮保持淡蓝色 */
-.dq-review-panel.dq-light-theme .dq-review-btn-primary {
-  background: #667eea;
-  color: #ffffff;
-}
-
-.dq-review-panel.dq-light-theme .dq-review-btn-primary:hover {
-  background: #5a6fd6;
-}
-
-/* 亮色主题：危险按钮（结束评审）保持红色 */
-.dq-review-panel.dq-light-theme .dq-review-btn-danger {
-  background: #ef4444;
-  color: white;
-}
-
-.dq-review-panel.dq-light-theme .dq-review-btn-danger:hover {
-  background: #dc2626;
-}
-
-/* 亮色主题：次要按钮 */
-.dq-review-panel.dq-light-theme button {
-  background: #f3f4f6;
-  color: #1f2937;
-  border-color: #d1d5db;
-}
-
-.dq-review-panel.dq-light-theme button:hover {
-  background: #e5e7eb;
-  border-color: #9ca3af;
-}
-
-.dq-review-panel.dq-light-theme .dq-review-comment-badge {
-  background: #1f2937;
-  color: #ffffff;
-}
-
-.dq-review-comment-list.dq-light-theme {
-  background: rgba(255, 255, 255, 0.98);
-  border-color: #e5e7eb;
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.2);
-}
-
-.dq-review-comment-list.dq-light-theme .dq-review-comment-list-header {
-  background: #f9fafb;
-  border-bottom-color: #e5e7eb;
-  color: #1f2937;
-}
-
-.dq-review-comment-list.dq-light-theme .dq-review-comment-list-header button {
-  background: #ffffff;
-  color: #6b7280;
-  border-color: #d1d5db;
-}
-
-.dq-review-comment-list.dq-light-theme .dq-review-comment-list-header button:hover {
-  background: #f3f4f6;
-  color: #1f2937;
-}
-
-.dq-review-comment-list.dq-light-theme .dq-review-comment-list-empty {
-  color: #6b7280;
-}
-
-.dq-review-comment-list.dq-light-theme .dq-review-comment-card {
-  background: #ffffff;
-  border-color: #e5e7eb;
-}
-
-.dq-review-comment-list.dq-light-theme .dq-review-comment-card:hover {
-  background: #f9fafb;
-  border-color: #d1d5db;
-}
-
-.dq-review-comment-list.dq-light-theme .dq-review-comment-card.active {
-  background: #eff6ff;
-  border-color: #3b82f6;
-}
-
-.dq-review-comment-list.dq-light-theme .dq-review-comment-content {
-  color: #1f2937;
-}
-
-.dq-review-comment-list.dq-light-theme .dq-review-comment-meta {
-  color: #6b7280;
-}
-
-.dq-review-comment-list.dq-light-theme .dq-review-comment-actions button {
-  background: #f3f4f6;
-  color: #6b7280;
-  border-color: #d1d5db;
-}
-
-.dq-review-comment-list.dq-light-theme .dq-review-comment-actions button:hover {
-  background: #e5e7eb;
-  color: #1f2937;
-}
-
-.dq-review-comment-list.dq-light-theme .dq-review-guide {
-  background: #f9fafb;
-  border-color: #e5e7eb;
-}
-
-.dq-review-comment-list.dq-light-theme .dq-review-guide-title {
-  color: #1f2937;
-}
-
-.dq-review-comment-list.dq-light-theme .dq-review-guide-list li {
-  color: #4b5563;
-}
-
-/* 亮色主题滚动条 */
-.dq-review-comment-list.dq-light-theme .dq-review-comment-list-body::-webkit-scrollbar-track {
-  background: #f9fafb;
-}
-
-.dq-review-comment-list.dq-light-theme .dq-review-comment-list-body::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-}
-
-.dq-review-comment-list.dq-light-theme .dq-review-comment-list-body::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
