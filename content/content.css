@@ -107,8 +107,8 @@
   transition: background 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
 }
 
-/* 面板内所有按钮和元素也添加过渡 */
-.dq-review-panel * {
+/* 面板内所有按钮和元素也添加过渡（排除背面层） */
+.dq-review-panel *:not(.dq-review-panel-backface) {
   transition: background 0.5s ease, color 0.5s ease, border-color 0.5s ease;
 }
 
@@ -216,17 +216,46 @@
 
 /* ==================== 翻转动画：双面卡片（背面=Logo，正面=操控面板） ==================== */
 
-/* 翻转入场 */
-.dq-review-panel-flip-in {
-  animation: dq-review-flip-in 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
-  transform-origin: center center;
-  transform-style: preserve-3d;
+/*
+ * 翻转动画方案：
+ * - 外层 wrapper（.dq-review-panel-flip-wrapper）提供 perspective，让面板翻转有 3D 近大远小效果
+ * - 面板自身做 rotateX 翻转 + transform-style: preserve-3d
+ * - 子元素 backface-visibility: hidden 在 preserve-3d 容器中正确生效
+ * - wrapper 由 JS 动态创建/销毁，与动画生命周期一致
+ */
+
+/* 翻转包裹层：提供 3D 透视 */
+.dq-review-panel-flip-wrapper {
+  position: fixed !important;
+  bottom: 20px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  perspective: 800px !important;
+  -webkit-perspective: 800px !important;
+  z-index: 2147483647 !important;
+  pointer-events: none !important;
 }
 
-/* 翻转时：面板正面子元素在背面时隐藏 */
-.dq-review-panel-flip-in > *:not(.dq-review-panel-backface),
-.dq-review-panel-exit > *:not(.dq-review-panel-backface) {
-  backface-visibility: hidden;
+/* 拖动后的 wrapper：不居中，用面板原位置 */
+.dq-review-panel-flip-wrapper.dq-flip-wrapper-dragged {
+  left: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+}
+
+/* 翻转入场：面板在 wrapper 内做旋转 */
+.dq-review-panel-flip-in {
+  animation: dq-review-flip-in 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards !important;
+  transform-origin: center center !important;
+  transform-style: preserve-3d !important;
+  -webkit-transform-style: preserve-3d !important;
+  pointer-events: auto !important;
+}
+
+/* 入场翻转时：正面子元素在背面时隐藏 */
+.dq-review-panel-flip-in > *:not(.dq-review-panel-backface) {
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
 }
 
 /* 背面层：与面板同色背景 + 黑色 Logo 居中（由 JS 动态创建，默认隐藏） */
@@ -234,62 +263,69 @@
   display: none;
 }
 
-/* 仅在翻转动画期间显示背面层 */
-.dq-review-panel-flip-in > .dq-review-panel-backface,
-.dq-review-panel-exit > .dq-review-panel-backface {
-  display: block;
-  position: absolute;
-  inset: 0;
-  border-radius: 8px;
-  backface-visibility: hidden;
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: 28px 28px;
-  z-index: 1;
-  pointer-events: none;
+/* 仅在入场翻转动画期间显示背面层 */
+.dq-review-panel-flip-in > .dq-review-panel-backface {
+  display: block !important;
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: 8px !important;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  background-size: 28px 28px !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+  transition: none !important;
 }
 
 /* 入场：背面正向预翻转 180°（与面板初始 180° 抵消朝向观察者） */
 .dq-review-panel-flip-in > .dq-review-panel-backface {
-  transform: rotateX(180deg);
+  transform: rotateX(180deg) !important;
 }
 
-/* 退场：背面反向预翻转 -180°（与面板末态 -180° 抵消朝向观察者） */
-.dq-review-panel-exit > .dq-review-panel-backface {
-  transform: rotateX(-180deg);
-}
 
 @keyframes dq-review-flip-in {
   0% {
-    transform: translateX(-50%) perspective(400px) translateY(100px) rotateX(180deg);
+    transform: translateY(100px) rotateX(180deg);
     opacity: 0;
   }
   20% {
     opacity: 1;
   }
   100% {
-    transform: translateX(-50%) perspective(400px) translateY(0) rotateX(0deg);
+    transform: translateY(0) rotateX(0deg);
     opacity: 1;
   }
 }
 
-/* 翻转退场 */
+/* 退场：向下位移 + 淡出 */
 .dq-review-panel-exit {
-  animation: dq-review-panel-exit-flip 0.6s ease-in forwards;
-  transform-origin: center center;
-  transform-style: preserve-3d;
+  animation: dq-review-panel-exit-center 0.3s ease-in forwards !important;
+  pointer-events: none !important;
+}
+/* 拖动过的面板退场（无 translateX(-50%)） */
+.dq-review-panel-exit.dq-exit-dragged {
+  animation-name: dq-review-panel-exit-dragged !important;
 }
 
-@keyframes dq-review-panel-exit-flip {
+@keyframes dq-review-panel-exit-center {
   0% {
-    transform: translateX(-50%) perspective(400px) translateY(0) rotateX(0deg);
-    opacity: 1;
-  }
-  80% {
+    transform: translateX(-50%) translateY(0);
     opacity: 1;
   }
   100% {
-    transform: translateX(-50%) perspective(400px) translateY(80px) rotateX(-180deg);
+    transform: translateX(-50%) translateY(60px);
+    opacity: 0;
+  }
+}
+@keyframes dq-review-panel-exit-dragged {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(60px);
     opacity: 0;
   }
 }

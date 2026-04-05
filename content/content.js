@@ -620,14 +620,19 @@
 
   // 出场方式2：翻转出场（双面卡片：背面 Logo → 翻转 → 正面按钮）
   function showReviewPanelFlip() {
+    // 重置面板为相对定位（由 wrapper 控制位置）
     reviewPanel.style.display = 'flex';
-
-    // 重置位置到初始状态（底部居中）
-    reviewPanel.style.left = '50%';
+    reviewPanel.style.position = 'relative';
+    reviewPanel.style.left = 'auto';
     reviewPanel.style.top = 'auto';
-    reviewPanel.style.bottom = '20px';
+    reviewPanel.style.bottom = 'auto';
     reviewPanel.style.right = 'auto';
-    reviewPanel.style.transform = 'translateX(-50%)';
+    reviewPanel.style.transform = 'none';
+
+    // 创建 wrapper 提供 perspective + 定位
+    const wrapper = createFlipWrapper(false);
+    wrapper.appendChild(reviewPanel);
+    document.body.appendChild(wrapper);
 
     // 插入背面层（Logo 面）
     ensurePanelBackface();
@@ -637,14 +642,52 @@
     void reviewPanel.offsetWidth;
     reviewPanel.classList.add('dq-review-panel-flip-in');
 
-    // 动画结束后移除背面层，清除动画类
+    // 动画结束后：拆除 wrapper，恢复面板为 fixed 定位
     setTimeout(() => {
       removePanelBackface();
       reviewPanel.classList.remove('dq-review-panel-flip-in');
+      unwrapPanel();
     }, 850);
 
     isPanelVisible = true;
     afterPanelShow();
+  }
+
+  // 创建翻转动画用的 wrapper 层
+  function createFlipWrapper(isDragged) {
+    let wrapper = document.querySelector('.dq-review-panel-flip-wrapper');
+    if (wrapper) wrapper.remove();
+
+    wrapper = document.createElement('div');
+    wrapper.className = 'dq-review-panel-flip-wrapper';
+
+    if (isDragged) {
+      // 拖动后：wrapper 定位到面板当前位置
+      const rect = reviewPanel.getBoundingClientRect();
+      wrapper.classList.add('dq-flip-wrapper-dragged');
+      wrapper.style.position = 'fixed';
+      wrapper.style.left = rect.left + 'px';
+      wrapper.style.top = rect.top + 'px';
+    }
+
+    return wrapper;
+  }
+
+  // 拆除 wrapper，恢复面板为独立 fixed 定位
+  function unwrapPanel() {
+    const wrapper = reviewPanel.parentElement;
+    if (!wrapper || !wrapper.classList.contains('dq-review-panel-flip-wrapper')) return;
+
+    // 恢复面板为 fixed + 底部居中
+    reviewPanel.style.position = 'fixed';
+    reviewPanel.style.left = '50%';
+    reviewPanel.style.top = 'auto';
+    reviewPanel.style.bottom = '20px';
+    reviewPanel.style.right = 'auto';
+    reviewPanel.style.transform = 'translateX(-50%)';
+
+    document.body.appendChild(reviewPanel);
+    wrapper.remove();
   }
 
   // 创建/确保背面层存在（与面板同色背景 + 黑色 Logo 居中）
@@ -653,9 +696,13 @@
     const backface = document.createElement('div');
     backface.className = 'dq-review-panel-backface';
     const panelBg = getComputedStyle(reviewPanel).backgroundColor || '#2d2d2d';
-    backface.style.background = panelBg;
+    // 使用 backgroundColor 而非 background 简写，避免覆盖 CSS 的 background-image/size/position
+    backface.style.backgroundColor = panelBg;
     const logoUrl = chrome.runtime.getURL('icons/pingshen.png');
     backface.style.backgroundImage = `url('${logoUrl}')`;
+    backface.style.backgroundRepeat = 'no-repeat';
+    backface.style.backgroundPosition = 'center center';
+    backface.style.backgroundSize = '28px 28px';
     backface.style.filter = 'brightness(0)';
     reviewPanel.insertBefore(backface, reviewPanel.firstChild);
   }
@@ -679,20 +726,22 @@
   function hideReviewPanel() {
     if (!reviewPanel) return;
 
-    // 插入背面层，退场翻转时显示 Logo 面
-    ensurePanelBackface();
+    // 判断是否被拖动过（拖动后 transform 不含 translateX(-50%)）
+    const wasDragged = !reviewPanel.style.transform.includes('translateX(-50%)');
 
-    // 统一退场：绕 X 轴向下翻转退出
+    // 退场动画：直接从当前位置向下滑出消失
     reviewPanel.classList.remove('dq-review-panel-drop', 'dq-review-panel-flip-in');
     void reviewPanel.offsetWidth;
     reviewPanel.classList.add('dq-review-panel-exit');
+    if (wasDragged) {
+      reviewPanel.classList.add('dq-exit-dragged');
+    }
 
-    // 动画结束后隐藏
+    // 动画结束后隐藏并重置
     setTimeout(() => {
       reviewPanel.style.display = 'none';
-      reviewPanel.classList.remove('dq-review-panel-exit');
-      removePanelBackface();
-    }, 600);
+      reviewPanel.classList.remove('dq-review-panel-exit', 'dq-exit-dragged');
+    }, 300);
 
     isPanelVisible = false;
 
@@ -946,6 +995,7 @@
   // 判断是否是评审工具自身的 UI 元素
   function isReviewUIElement(target) {
     return target.closest('.dq-review-panel') ||
+           target.closest('.dq-review-panel-flip-wrapper') ||
            target.closest('.dq-review-comment-dialog') ||
            target.closest('.dq-review-marker') ||
            target.closest('.dq-review-comment-list') ||
