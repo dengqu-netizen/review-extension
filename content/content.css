@@ -216,6 +216,86 @@
   }
 }
 
+/* ==================== 翻转动画：双面卡片（背面=Logo，正面=操控面板） ==================== */
+
+/* 翻转入场 */
+.dq-review-panel-flip-in {
+  animation: dq-review-flip-in 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  transform-origin: center center;
+  transform-style: preserve-3d;
+}
+
+/* 翻转时：面板正面子元素在背面时隐藏 */
+.dq-review-panel-flip-in > *:not(.dq-review-panel-backface),
+.dq-review-panel-exit > *:not(.dq-review-panel-backface) {
+  backface-visibility: hidden;
+}
+
+/* 背面层：与面板同色背景 + 黑色 Logo 居中（由 JS 动态创建，默认隐藏） */
+.dq-review-panel-backface {
+  display: none;
+}
+
+/* 仅在翻转动画期间显示背面层 */
+.dq-review-panel-flip-in > .dq-review-panel-backface,
+.dq-review-panel-exit > .dq-review-panel-backface {
+  display: block;
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  backface-visibility: hidden;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: 28px 28px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* 入场：背面正向预翻转 180°（与面板初始 180° 抵消朝向观察者） */
+.dq-review-panel-flip-in > .dq-review-panel-backface {
+  transform: rotateX(180deg);
+}
+
+/* 退场：背面反向预翻转 -180°（与面板末态 -180° 抵消朝向观察者） */
+.dq-review-panel-exit > .dq-review-panel-backface {
+  transform: rotateX(-180deg);
+}
+
+@keyframes dq-review-flip-in {
+  0% {
+    transform: translateX(-50%) perspective(400px) translateY(100px) rotateX(180deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) perspective(400px) translateY(0) rotateX(0deg);
+    opacity: 1;
+  }
+}
+
+/* 翻转退场 */
+.dq-review-panel-exit {
+  animation: dq-review-panel-exit-flip 0.6s ease-in forwards;
+  transform-origin: center center;
+  transform-style: preserve-3d;
+}
+
+@keyframes dq-review-panel-exit-flip {
+  0% {
+    transform: translateX(-50%) perspective(400px) translateY(0) rotateX(0deg);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) perspective(400px) translateY(80px) rotateX(-180deg);
+    opacity: 0;
+  }
+}
+
 .dq-review-panel-drag-handle {
   width: 20px;
   height: 28px;

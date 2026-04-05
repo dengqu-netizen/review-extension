@@ -16,7 +16,11 @@
 (function() {
   'use strict';
 
-  const VERSION = '2.4.0';
+  const VERSION = '2.5.0';
+
+  // ==================== 动效配置 ====================
+  // 出场动效类型：'drop'（从天砸落）| 'flip'（卡片翻转）
+  const PANEL_ENTRANCE_ANIMATION = 'flip';
 
   // ==================== 国际化 (i18n) ====================
   const userLang = navigator.language.startsWith('zh') ? 'zh' : 'en';
@@ -586,6 +590,16 @@
     if (!reviewPanel) {
       createReviewPanel();
     }
+
+    if (PANEL_ENTRANCE_ANIMATION === 'flip') {
+      showReviewPanelFlip();
+    } else {
+      showReviewPanelDrop();
+    }
+  }
+
+  // 出场方式1：从天砸落（原有动效）
+  function showReviewPanelDrop() {
     reviewPanel.style.display = 'flex';
 
     // 重置位置到初始状态（底部居中），清除拖动后的定位
@@ -595,27 +609,91 @@
     reviewPanel.style.right = 'auto';
     reviewPanel.style.transform = 'translateX(-50%)';
 
-    // 添加落下动画
-    reviewPanel.classList.remove('dq-review-panel-drop');
-    void reviewPanel.offsetWidth; // 强制重排，重置动画
+    // 清除可能残留的其他动画类
+    reviewPanel.classList.remove('dq-review-panel-drop', 'dq-review-panel-flip-in', 'dq-review-panel-exit');
+    void reviewPanel.offsetWidth;
     reviewPanel.classList.add('dq-review-panel-drop');
 
     isPanelVisible = true;
+    afterPanelShow();
+  }
 
-    // 恢复角标：从 storage 重建缺失的，显示已有的
+  // 出场方式2：翻转出场（双面卡片：背面 Logo → 翻转 → 正面按钮）
+  function showReviewPanelFlip() {
+    reviewPanel.style.display = 'flex';
+
+    // 重置位置到初始状态（底部居中）
+    reviewPanel.style.left = '50%';
+    reviewPanel.style.top = 'auto';
+    reviewPanel.style.bottom = '20px';
+    reviewPanel.style.right = 'auto';
+    reviewPanel.style.transform = 'translateX(-50%)';
+
+    // 插入背面层（Logo 面）
+    ensurePanelBackface();
+
+    // 清除可能残留的其他动画类
+    reviewPanel.classList.remove('dq-review-panel-drop', 'dq-review-panel-flip-in', 'dq-review-panel-exit');
+    void reviewPanel.offsetWidth;
+    reviewPanel.classList.add('dq-review-panel-flip-in');
+
+    // 动画结束后移除背面层，清除动画类
+    setTimeout(() => {
+      removePanelBackface();
+      reviewPanel.classList.remove('dq-review-panel-flip-in');
+    }, 850);
+
+    isPanelVisible = true;
+    afterPanelShow();
+  }
+
+  // 创建/确保背面层存在（与面板同色背景 + 黑色 Logo 居中）
+  function ensurePanelBackface() {
+    if (reviewPanel.querySelector('.dq-review-panel-backface')) return;
+    const backface = document.createElement('div');
+    backface.className = 'dq-review-panel-backface';
+    const panelBg = getComputedStyle(reviewPanel).backgroundColor || '#2d2d2d';
+    backface.style.background = panelBg;
+    const logoUrl = chrome.runtime.getURL('icons/pingshen.png');
+    backface.style.backgroundImage = `url('${logoUrl}')`;
+    backface.style.filter = 'brightness(0)';
+    reviewPanel.insertBefore(backface, reviewPanel.firstChild);
+  }
+
+  // 移除背面层
+  function removePanelBackface() {
+    const el = reviewPanel.querySelector('.dq-review-panel-backface');
+    if (el) el.remove();
+  }
+
+  // 面板显示后的通用初始化
+  function afterPanelShow() {
     rebuildAndShowMarkers();
     updateCommentBadge();
 
-    // 延迟检测主题，确保面板已完全渲染
     setTimeout(() => {
       detectAndSwitchTheme();
     }, 100);
   }
 
   function hideReviewPanel() {
-    if (reviewPanel) {
+    if (!reviewPanel) return;
+
+    // 插入背面层，退场翻转时显示 Logo 面
+    ensurePanelBackface();
+
+    // 统一退场：绕 X 轴向下翻转退出
+    reviewPanel.classList.remove('dq-review-panel-drop', 'dq-review-panel-flip-in');
+    void reviewPanel.offsetWidth;
+    reviewPanel.classList.add('dq-review-panel-exit');
+
+    // 动画结束后隐藏
+    setTimeout(() => {
       reviewPanel.style.display = 'none';
-    }
+      reviewPanel.classList.remove('dq-review-panel-exit');
+      removePanelBackface();
+    }, 600);
+
     isPanelVisible = false;
 
     // 架构改进1：隐藏角标而非销毁
@@ -675,8 +753,8 @@
     panelStartX = rect.left;
     panelStartY = rect.top;
 
-    // 移除落地动画类，避免 transform 冲突
-    reviewPanel.classList.remove('dq-review-panel-drop');
+    // 移除所有动画类，避免 transform 冲突
+    reviewPanel.classList.remove('dq-review-panel-drop', 'dq-review-panel-flip-in', 'dq-review-panel-exit');
     // 清除 transform，改用 left/top 定位
     reviewPanel.style.transform = 'none';
     reviewPanel.style.left = panelStartX + 'px';
