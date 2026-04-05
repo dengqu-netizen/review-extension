@@ -18,8 +18,8 @@
   "content_scripts": [
     {
       "matches": ["file:///*", "http://*/*", "https://*/*"],
-      "js": ["content/content.js"],
-      "css": ["content/content.css"],
+      "js": ["content/content.js", "content/theme-switch.js"],
+      "css": ["content/content.css", "content/theme-switch.css"],
       "run_at": "document_idle"
     }
   ],

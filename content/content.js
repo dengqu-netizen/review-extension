@@ -1267,6 +1267,7 @@
 
   // 重建角标并显示（面板打开时调用）
   function rebuildAndShowMarkers() {
+    let bounceIndex = 0;
     annotations.forEach(annotation => {
       if (annotationMarkerMap.has(annotation.id)) {
         // 角标已存在，显示并更新位置
@@ -1274,6 +1275,7 @@
         // 检查元素是否还在 DOM 中
         if (element && document.body.contains(element)) {
           updateMarkerPosition(marker, element);
+          triggerBounce(marker, bounceIndex++);
         } else {
           // 运行时引用丢失，尝试通过 selector 找回
           const found = findElementSafe(annotation.selector);
@@ -1281,6 +1283,7 @@
             annotationMarkerMap.set(annotation.id, { marker, element: found });
             annotationElementMap.set(annotation.id, found);
             updateMarkerPosition(marker, found);
+            triggerBounce(marker, bounceIndex++);
           } else {
             marker.style.display = 'none';
           }
@@ -1291,9 +1294,25 @@
         if (element) {
           annotationElementMap.set(annotation.id, element);
           createMarker(annotation, element);
+          const entry = annotationMarkerMap.get(annotation.id);
+          if (entry) triggerBounce(entry.marker, bounceIndex++);
         }
       }
     });
+  }
+
+  // Q弹入场：错开时间依次弹出
+  function triggerBounce(marker, index) {
+    // 先隐藏（scale(0)），等延迟后再弹出
+    marker.style.setProperty('transform', 'scale(0)', 'important');
+    marker.classList.remove('dq-marker-bounce');
+    setTimeout(() => {
+      marker.style.removeProperty('transform');
+      marker.classList.add('dq-marker-bounce');
+      marker.addEventListener('animationend', () => {
+        marker.classList.remove('dq-marker-bounce');
+      }, { once: true });
+    }, index * 80);
   }
 
   // 隐藏所有角标（面板关闭时调用，不销毁）

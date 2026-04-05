@@ -1,0 +1,109 @@
+/* ==================== 主题切换彩蛋 ==================== */
+/* 手柄 + 拖动轨道 + 弹性动画 */
+
+/* 热区：面板左上角外侧，覆盖到轨道区域，确保鼠标不会掉出去 */
+.dq-theme-hotzone {
+  position: absolute !important;
+  top: -20px !important;
+  left: -4px !important;
+  width: 40px !important;
+  height: 30px !important;
+  z-index: 10 !important;
+  cursor: default !important;
+  pointer-events: auto !important;
+  /* 调试时可取消注释 */
+  /* background: rgba(255,0,0,0.15); */
+}
+
+/* 轨道容器 */
+.dq-theme-track {
+  position: absolute !important;
+  top: -14px !important;
+  left: 4px !important;
+  right: 4px !important;
+  height: 8px !important;
+  background: rgba(0, 0, 0, 0.15) !important;
+  border-radius: 4px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.3s ease !important;
+  overflow: visible !important;
+}
+
+/* 轨道可见时 */
+.dq-theme-track.dq-visible {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* 手柄 */
+.dq-theme-handle {
+  position: absolute !important;
+  top: 50% !important;
+  left: 0 !important;
+  transform: translateY(-50%) scale(0) rotate(-180deg) !important;
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 50% !important;
+  background: #3a3a3a !important;
+  border: 2px solid #2d2d2d !important;
+  cursor: grab !important;
+  z-index: 11 !important;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+              left 0.05s linear,
+              box-shadow 0.2s ease !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 手柄出现（旋转入场） */
+.dq-theme-handle.dq-handle-visible {
+  transform: translateY(-50%) scale(1) rotate(0deg) !important;
+}
+
+/* 拖动中：关闭所有 transition，left 由 JS 直接控制 */
+.dq-theme-handle.dq-dragging {
+  cursor: grabbing !important;
+  transform: translateY(-50%) scale(1.15) !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4) !important;
+  transition: none !important;
+}
+
+/* 手柄卡扣到位 */
+.dq-theme-handle.dq-handle-locked {
+  cursor: default !important;
+  transform: translateY(-50%) scale(1) !important;
+  transition: left 0.2s cubic-bezier(0.22, 0.61, 0.36, 1),
+              transform 0.2s ease !important;
+}
+
+/* 手柄弹回动画 */
+.dq-theme-handle.dq-handle-snapback {
+  transition: left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+              transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+/* 卡扣位置的微光效果 */
+.dq-theme-track::after {
+  content: '' !important;
+  position: absolute !important;
+  right: 2px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background: rgba(102, 126, 234, 0.4) !important;
+  opacity: 0 !important;
+  transition: opacity 0.3s ease !important;
+}
+
+/* 拖动接近卡扣时微光亮起 */
+.dq-theme-track.dq-near-lock::after {
+  opacity: 1 !important;
+  animation: dq-lock-pulse 0.6s ease-in-out infinite !important;
+}
+
+@keyframes dq-lock-pulse {
+  0%, 100% { transform: translateY(-50%) scale(1); opacity: 0.6; }
+  50% { transform: translateY(-50%) scale(1.4); opacity: 1; }
+}
