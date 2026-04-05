@@ -2,15 +2,13 @@
 /* 评审标注浏览器扩展 - 样式文件（架构重构版） */
 /*
  * @author dengqu
- * @version 2.0.0
+ * @version 2.6.0
  *
  * 隔离性优化：
  * 1. 所有 z-index 使用最大值 2147483647
  * 2. 关键样式使用 !important 防止被覆盖
  * 3. 所有选择器使用 .dq-review- 前缀避免命名冲突
  * 4. 使用独立的字体栈，不继承页面字体
- * 5. V2: 去掉 .dq-review-highlight / .dq-review-hover-highlight（改用 overlay）
- * 6. V2: 角标改为 position: fixed（配合 getBoundingClientRect）
  */
 
 /* ==================== Toast 提示 ==================== */
@@ -957,21 +955,6 @@ textarea.dq-review-form-control {
   font-weight: 600;
   font-size: 11px;
   text-transform: uppercase;
-}
-
-.dq-review-badge-p0 {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.dq-review-badge-p1 {
-  background: #fed7aa;
-  color: #9a3412;
-}
-
-.dq-review-badge-p2 {
-  background: #dbeafe;
-  color: #1e40af;
 }
 
 .dq-review-comment-item-content {

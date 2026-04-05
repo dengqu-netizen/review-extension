@@ -17,7 +17,7 @@ chrome.runtime.onInstalled.addListener((details) => {
 });
 
 // 监听来自content script或popup的消息
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   // 预留消息处理接口
   if (request.action === 'ping') {
     sendResponse({ status: 'ok' });

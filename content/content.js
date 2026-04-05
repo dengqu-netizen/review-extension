@@ -3,7 +3,7 @@
  * 评审标注浏览器扩展 - 内容脚本（架构重构版）
  *
  * @author dengqu
- * @version 2.0.0
+ * @version 2.6.0
  * @description 为 HTML 原型页面提供交互式评审标注功能
  *
  * 架构改进（v1 → v2）：
@@ -16,7 +16,7 @@
 (function() {
   'use strict';
 
-  const VERSION = '2.5.0';
+  const VERSION = '2.6.0';
 
   // ==================== 动效配置 ====================
   // 出场动效类型：'drop'（从天砸落）| 'flip'（卡片翻转）
