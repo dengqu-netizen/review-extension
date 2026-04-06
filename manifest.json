@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "原型评审标注工具 V2",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "description": "在HTML原型上添加评审标注，生成优化待办表（架构重构版）",
   "permissions": [
     "storage",
