@@ -16,7 +16,7 @@
 (function() {
   'use strict';
 
-  const VERSION = '2.7.0';
+  const VERSION = '2.8.0';
 
   // ==================== 动效配置 ====================
   // 出场动效类型：'drop'（从天砸落）| 'flip'（卡片翻转）
@@ -33,7 +33,7 @@
       // 评审面板
       startReview: '开始评审',
       endReview: '结束评审',
-      viewRecords: '看记录',
+      viewRecords: '评审记录',
       export: '导出',
       close: '关闭',
       dragHandle: '拖动',
@@ -103,6 +103,27 @@
       fileDownloaded: '文件已开始下载！',
       copiedToClipboard: '已复制到剪贴板！',
       pleaseEnterContent: '请输入评论内容',
+      backupSaved: '评审数据已备份',
+      backupRestored: '已从备份恢复评审数据',
+      htmlExported: 'HTML 评审副本已下载',
+      jsonBackupDone: 'JSON 备份已下载',
+      syncSaved: '已同步到云端',
+      syncFailed: '云端同步失败（数据已保存到本地）',
+      dataRestoredFromHtml: '已从 HTML 注释中恢复评审数据',
+      dataRestoredFromSync: '已从云端同步恢复评审数据',
+      noBackupFound: '未找到可恢复的备份数据',
+      backupMismatchTitle: '⚠ 备份来源不匹配',
+      backupSource: '备份来源：',
+      currentPage: '当前页面：',
+      backupMismatchConfirm: '该备份可能不属于当前页面，仍然恢复吗？',
+      confirmRestore: '仍然恢复',
+
+      // 备份按钮
+      backup: '备份',
+      backupTitle: '数据备份',
+      backupToJson: '导出 JSON 备份',
+      backupToHtml: '导出 HTML 评审副本',
+      restoreFromBackup: '从备份恢复',
 
       // 日志
       initialized: '已初始化',
@@ -119,7 +140,7 @@
       // Review panel
       startReview: 'Start Review',
       endReview: 'End Review',
-      viewRecords: 'View Records',
+      viewRecords: 'Review Records',
       export: 'Export',
       close: 'Close',
       dragHandle: 'Drag',
@@ -189,6 +210,27 @@
       fileDownloaded: 'File download started!',
       copiedToClipboard: 'Copied to clipboard!',
       pleaseEnterContent: 'Please enter comment content',
+      backupSaved: 'Review data backed up',
+      backupRestored: 'Review data restored from backup',
+      htmlExported: 'HTML review copy downloaded',
+      jsonBackupDone: 'JSON backup downloaded',
+      syncSaved: 'Synced to cloud',
+      syncFailed: 'Cloud sync failed (data saved locally)',
+      dataRestoredFromHtml: 'Review data restored from HTML comments',
+      dataRestoredFromSync: 'Review data restored from cloud sync',
+      noBackupFound: 'No backup data found',
+      backupMismatchTitle: '⚠ Backup source mismatch',
+      backupSource: 'Backup from: ',
+      currentPage: 'Current page: ',
+      backupMismatchConfirm: 'This backup may not belong to the current page. Restore anyway?',
+      confirmRestore: 'Restore Anyway',
+
+      // Backup buttons
+      backup: 'Backup',
+      backupTitle: 'Data Backup',
+      backupToJson: 'Export JSON Backup',
+      backupToHtml: 'Export HTML Review Copy',
+      restoreFromBackup: 'Restore from Backup',
 
       // Logs
       initialized: 'initialized',
@@ -528,6 +570,55 @@
   // 鼠标移动目标
   let hoveredElement = null;
 
+  // iframe 支持
+  let iframeListeners = []; // { iframe, doc, clickHandler, moveHandler }
+
+  // ==================== iframe 辅助函数 ====================
+
+  function getSameOriginIframes() {
+    const result = [];
+    document.querySelectorAll('iframe').forEach(iframe => {
+      try {
+        if (iframe.contentDocument && iframe.contentDocument.body) {
+          result.push(iframe);
+        }
+      } catch (e) { /* 跨域忽略 */ }
+    });
+    return result;
+  }
+
+  function getElementIframe(element) {
+    if (element.ownerDocument === document) return null;
+    const iframes = document.querySelectorAll('iframe');
+    for (const iframe of iframes) {
+      try {
+        if (iframe.contentDocument === element.ownerDocument) return iframe;
+      } catch (e) { /* 跨域忽略 */ }
+    }
+    return null;
+  }
+
+  function getAbsoluteRect(element) {
+    const rect = element.getBoundingClientRect();
+    const iframe = getElementIframe(element);
+    if (!iframe) return rect;
+    const iframeRect = iframe.getBoundingClientRect();
+    return {
+      top: rect.top + iframeRect.top,
+      left: rect.left + iframeRect.left,
+      right: rect.right + iframeRect.left,
+      bottom: rect.bottom + iframeRect.top,
+      width: rect.width,
+      height: rect.height
+    };
+  }
+
+  function elementIsInDOM(element) {
+    if (!element) return false;
+    const doc = element.ownerDocument;
+    return doc && doc.body && doc.body.contains(element);
+  }
+
   // ==================== 初始化 ====================
   function init() {
     loadAnnotations();
@@ -541,17 +632,24 @@
   // ==================== 全局滚动监听（架构改进3） ====================
   // 用捕获模式监听 document 上所有 scroll 事件，覆盖嵌套滚动容器
   function setupGlobalScrollListener() {
-    document.addEventListener('scroll', () => {
+    const onScroll = () => {
       updateAllVisibleMarkerPositions();
-      // 同步更新选中覆盖层
       if (selectedElement) {
         updateSelectOverlay(selectedElement);
       }
-      // 同步更新悬停覆盖层
       if (hoveredElement && isReviewMode) {
         updateHoverOverlay(hoveredElement);
       }
-    }, true); // 捕获模式：能捕获所有子容器的 scroll 事件
+    };
+
+    document.addEventListener('scroll', onScroll, true);
+
+    // 监听 iframe 内滚动
+    getSameOriginIframes().forEach(iframe => {
+      try {
+        iframe.contentDocument.addEventListener('scroll', onScroll, true);
+      } catch (e) { /* 跨域忽略 */ }
+    });
 
     // resize 同理
     window.addEventListener('resize', () => {
@@ -766,6 +864,7 @@
         <span class="dq-review-badge" id="reviewCommentBadge">0</span>
       </button>
       <button class="dq-review-btn dq-review-btn-secondary" id="reviewExportBtn">${t('export')}</button>
+      <button class="dq-review-btn dq-review-btn-secondary" id="reviewBackupBtn">${t('backup')}</button>
       <button class="dq-review-btn-icon" id="reviewCloseBtn" title="${t('close')}">
         <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M5 5L15 15M15 5L5 15" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
@@ -778,6 +877,7 @@
     document.getElementById('reviewToggleBtn').addEventListener('click', toggleReviewMode);
     document.getElementById('reviewViewCommentsBtn').addEventListener('click', toggleCommentList);
     document.getElementById('reviewExportBtn').addEventListener('click', showExportDialog);
+    document.getElementById('reviewBackupBtn').addEventListener('click', showBackupMenu);
     document.getElementById('reviewCloseBtn').addEventListener('click', hideReviewPanel);
 
     const dragHandle = reviewPanel.querySelector('.dq-review-panel-drag-handle');
@@ -859,6 +959,7 @@
     document.body.style.cursor = 'crosshair';
     document.addEventListener('click', handleElementClick, true);
     document.addEventListener('mousemove', handleMouseMove, true);
+    attachIframeListeners();
 
     const btn = document.getElementById('reviewToggleBtn');
     if (btn) {
@@ -873,9 +974,11 @@
     document.body.style.cursor = 'default';
     document.removeEventListener('click', handleElementClick, true);
     document.removeEventListener('mousemove', handleMouseMove, true);
+    detachIframeListeners();
 
     hideHoverOverlay();
     hoveredElement = null;
+    hideMarkerPop();
 
     if (commentDialog) {
       commentDialog.remove();
@@ -888,6 +991,57 @@
       btn.classList.remove('dq-review-btn-danger');
       btn.classList.add('dq-review-btn-primary');
     }
+  }
+
+  // iframe 事件注入/清理
+  function attachIframeListeners() {
+    detachIframeListeners();
+    getSameOriginIframes().forEach(iframe => {
+      try {
+        const iframeDoc = iframe.contentDocument;
+        // 用包装函数，把 iframe 内事件转换为主文档可处理的形式
+        const clickHandler = (e) => {
+          if (!isReviewMode) return;
+          const target = e.target;
+          if (target === iframeDoc.body || target === iframeDoc.documentElement) return;
+          e.stopPropagation();
+          hideHoverOverlay();
+          hoveredElement = null;
+          selectedElement = target;
+          updateSelectOverlay(selectedElement);
+          showCommentDialog(target);
+        };
+        const moveHandler = (e) => {
+          if (!isReviewMode) return;
+          const target = e.target;
+          if (target === iframeDoc.body || target === iframeDoc.documentElement) {
+            hideHoverOverlay();
+            hoveredElement = null;
+            return;
+          }
+          if (hoveredElement === target) return;
+          hoveredElement = target;
+          updateHoverOverlay(hoveredElement);
+        };
+        iframeDoc.addEventListener('click', clickHandler, true);
+        iframeDoc.addEventListener('mousemove', moveHandler, true);
+        iframeDoc.body.style.cursor = 'crosshair';
+        iframeListeners.push({ iframe, doc: iframeDoc, clickHandler, moveHandler });
+      } catch (e) {
+        console.warn('[Review Extension V2] iframe attach failed:', e.message);
+      }
+    });
+  }
+
+  function detachIframeListeners() {
+    iframeListeners.forEach(({ doc, clickHandler, moveHandler }) => {
+      try {
+        doc.removeEventListener('click', clickHandler, true);
+        doc.removeEventListener('mousemove', moveHandler, true);
+        doc.body.style.cursor = 'default';
+      } catch (e) { /* iframe 可能已移除 */ }
+    });
+    iframeListeners = [];
   }
 
   // ==================== 覆盖层管理（架构改进4） ====================
@@ -910,7 +1064,7 @@
 
   function updateHoverOverlay(element) {
     if (!hoverOverlay || !element) return;
-    const rect = element.getBoundingClientRect();
+    const rect = getAbsoluteRect(element);
     hoverOverlay.style.display = 'block';
     hoverOverlay.style.top = rect.top + 'px';
     hoverOverlay.style.left = rect.left + 'px';
@@ -941,7 +1095,7 @@
 
   function updateSelectOverlay(element) {
     if (!selectOverlay || !element) return;
-    const rect = element.getBoundingClientRect();
+    const rect = getAbsoluteRect(element);
     selectOverlay.style.display = 'block';
     selectOverlay.style.top = rect.top + 'px';
     selectOverlay.style.left = rect.left + 'px';
@@ -978,7 +1132,11 @@
   function handleElementClick(e) {
     if (!isReviewMode) return;
 
+    // 如果目标元素已从 DOM 移除（如备份菜单项被 closeMenu 先移除），跳过
+    if (!document.contains(e.target)) return;
     if (isReviewUIElement(e.target)) return;
+    // 跳过隐藏元素和下载链接（备份/导出功能通过程序化 .click() 触发的）
+    if (e.target.style.display === 'none' || e.target.hasAttribute('download')) return;
     if (e.target === document.body || e.target === document.documentElement) return;
 
     e.stopPropagation();
@@ -992,15 +1150,9 @@
     showCommentDialog(e.target);
   }
 
-  // 判断是否是评审工具自身的 UI 元素
+  // 判断是否是评审工具自身的 UI 元素（通用前缀匹配，避免遗漏）
   function isReviewUIElement(target) {
-    return target.closest('.dq-review-panel') ||
-           target.closest('.dq-review-panel-flip-wrapper') ||
-           target.closest('.dq-review-comment-dialog') ||
-           target.closest('.dq-review-marker') ||
-           target.closest('.dq-review-comment-list') ||
-           target.closest('.dq-review-export-dialog') ||
-           target.closest('.dq-review-toast');
+    return !!target.closest('[class*="dq-review-"], [class*="dq-custom-"]');
   }
 
   // ==================== 评论对话框 ====================
@@ -1062,7 +1214,7 @@
 
     document.body.appendChild(commentDialog);
 
-    const rect = element.getBoundingClientRect();
+    const rect = getAbsoluteRect(element);
     const dialogWidth = 400;
     const dialogHeight = 380;
 
@@ -1205,9 +1357,10 @@
     document.body.appendChild(marker);
     updateMarkerPosition(marker, element);
 
-    // 角标点击：双向联动
+    // 角标点击：双向联动（隐藏 pop，打开列表）
     marker.addEventListener('click', (e) => {
       e.stopPropagation();
+      hideMarkerPop();
 
       // 显示黄色参考框
       selectedElement = element;
@@ -1218,17 +1371,26 @@
       highlightCommentCard(annotation.id);
     });
 
+    // hover 显示 pop 弹窗
+    marker.addEventListener('mouseenter', () => {
+      clearPopHideTimer();
+      showMarkerPop(marker, annotation);
+    });
+    marker.addEventListener('mouseleave', () => {
+      if (!popIsEditing) scheduleHidePop();
+    });
+
     // 存入映射表
     annotationMarkerMap.set(annotation.id, { marker, element });
   }
 
   function updateMarkerPosition(marker, element) {
-    if (!element || !document.body.contains(element)) {
+    if (!element || !elementIsInDOM(element)) {
       marker.style.display = 'none';
       return;
     }
 
-    const rect = element.getBoundingClientRect();
+    const rect = getAbsoluteRect(element);
 
     // 判断元素是否在视口外（被滚动隐藏）
     // 如果元素完全不可见，隐藏角标
@@ -1250,7 +1412,7 @@
 
     annotationMarkerMap.forEach(({ marker, element }, annotationId) => {
       // 如果运行时引用丢失（页面刷新后），尝试重新查找
-      if (!element || !document.body.contains(element)) {
+      if (!element || !elementIsInDOM(element)) {
         const annotation = annotations.find(a => a.id === annotationId);
         if (annotation) {
           const found = findElementSafe(annotation.selector);
@@ -1273,7 +1435,7 @@
         // 角标已存在，显示并更新位置
         const { marker, element } = annotationMarkerMap.get(annotation.id);
         // 检查元素是否还在 DOM 中
-        if (element && document.body.contains(element)) {
+        if (element && elementIsInDOM(element)) {
           updateMarkerPosition(marker, element);
           triggerBounce(marker, bounceIndex++);
         } else {
@@ -1320,11 +1482,201 @@
     annotationMarkerMap.forEach(({ marker }) => {
       marker.style.display = 'none';
     });
+    hideMarkerPop();
+  }
+
+  // ==================== 角标 Pop 弹窗 ====================
+
+  let activeMarkerPop = null;   // 当前显示的 pop DOM
+  let activePopAnnotationId = null; // 当前 pop 对应的 annotation id
+  let popHideTimer = null;      // 延迟隐藏定时器
+  let popIsEditing = false;     // 是否正在编辑
+
+  function showMarkerPop(marker, annotation) {
+    // 如果正在编辑当前 pop，不重复打开
+    if (popIsEditing && activePopAnnotationId === annotation.id) return;
+
+    // 如果是同一个 annotation 且已显示，保持不动
+    if (activeMarkerPop && activePopAnnotationId === annotation.id && !popIsEditing) {
+      clearPopHideTimer();
+      return;
+    }
+
+    hideMarkerPop();
+
+    activePopAnnotationId = annotation.id;
+
+    const pop = document.createElement('div');
+    pop.className = 'dq-review-marker-pop';
+    pop.style.setProperty('padding', '8px', 'important');
+
+    const popContent = document.createElement('div');
+    popContent.className = 'dq-review-marker-pop-content';
+    popContent.textContent = annotation.content || '';
+
+    const arrow = document.createElement('div');
+    arrow.className = 'dq-review-marker-pop-arrow dq-arrow-bottom';
+
+    pop.appendChild(arrow);
+    pop.appendChild(popContent);
+
+    document.body.appendChild(pop);
+    activeMarkerPop = pop;
+
+    // 定位到 marker 上方
+    positionPop(pop, marker);
+
+    // 淡入
+    requestAnimationFrame(() => pop.classList.add('dq-pop-visible'));
+
+    // pop 区域的 mouseenter/mouseleave 保持显示
+    pop.addEventListener('mouseenter', () => clearPopHideTimer());
+    pop.addEventListener('mouseleave', () => {
+      if (!popIsEditing) scheduleHidePop();
+    });
+
+    // 点击内容区进入编辑模式
+    const contentEl = pop.querySelector('.dq-review-marker-pop-content');
+    contentEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      enterPopEdit(pop, annotation);
+    });
+  }
+
+  function positionPop(pop, marker) {
+    const markerRect = marker.getBoundingClientRect();
+    const popRect = pop.getBoundingClientRect();
+    const arrow = pop.querySelector('.dq-review-marker-pop-arrow');
+    const gap = 8;
+    const edge = 4; // 距视口边缘最小间距
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    // ---- 1. 垂直方向：优先上方，空间不够放下方 ----
+    const spaceAbove = markerRect.top;
+    const spaceBelow = vh - markerRect.bottom;
+    let arrowDir;
+
+    pop.style.position = 'fixed';
+
+    if (spaceAbove >= popRect.height + gap + edge) {
+      // 上方够：用 bottom 锚定，编辑态向上延展
+      pop.style.top = '';
+      pop.style.bottom = (vh - markerRect.top + gap) + 'px';
+      arrowDir = 'bottom';
+    } else if (spaceBelow >= popRect.height + gap + edge) {
+      // 下方够：用 top 锚定
+      pop.style.bottom = '';
+      pop.style.top = (markerRect.bottom + gap) + 'px';
+      arrowDir = 'top';
+    } else {
+      // 上下都不够：选空间大的一侧，限制 pop 高度
+      if (spaceAbove >= spaceBelow) {
+        pop.style.top = '';
+        pop.style.bottom = (vh - markerRect.top + gap) + 'px';
+        pop.style.maxHeight = (spaceAbove - gap - edge) + 'px';
+        arrowDir = 'bottom';
+      } else {
+        pop.style.bottom = '';
+        pop.style.top = (markerRect.bottom + gap) + 'px';
+        pop.style.maxHeight = (spaceBelow - gap - edge) + 'px';
+        arrowDir = 'top';
+      }
+    }
+
+    // ---- 2. 水平方向：居中对齐 marker，贴边修正 ----
+    let left = markerRect.left + markerRect.width / 2 - popRect.width / 2;
+
+    if (left < edge) left = edge;
+    if (left + popRect.width > vw - edge) left = vw - popRect.width - edge;
+
+    pop.style.left = left + 'px';
+
+    // ---- 3. 箭头：始终指向 marker 中心 ----
+    arrow.className = 'dq-review-marker-pop-arrow';
+    arrow.classList.add(arrowDir === 'bottom' ? 'dq-arrow-bottom' : 'dq-arrow-top');
+    const markerCenterX = markerRect.left + markerRect.width / 2;
+    const arrowLeft = markerCenterX - left - 5;
+    arrow.style.left = Math.max(10, Math.min(arrowLeft, popRect.width - 18)) + 'px';
+  }
+
+  function enterPopEdit(pop, annotation) {
+    if (popIsEditing) return;
+    popIsEditing = true;
+
+    const contentEl = pop.querySelector('.dq-review-marker-pop-content');
+    const currentText = annotation.content || '';
+
+    // 直接替换为 textarea，边距由 pop 容器 padding 统一控制
+    const textarea = document.createElement('textarea');
+    textarea.className = 'dq-review-marker-pop-edit';
+    textarea.value = currentText;
+    contentEl.replaceWith(textarea);
+
+    textarea.focus();
+    // 光标移到末尾
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+    // 失焦：保存 + 关闭
+    textarea.addEventListener('blur', () => {
+      const newText = textarea.value.trim();
+      if (newText && newText !== annotation.content) {
+        annotation.content = newText;
+        saveAnnotations();
+        updateCommentList();
+      }
+      popIsEditing = false;
+      hideMarkerPop();
+    });
+
+    // Esc 取消编辑
+    textarea.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        popIsEditing = false;
+        hideMarkerPop();
+      }
+    });
+
+    // 阻止事件冒泡，避免触发 handleElementClick 等
+    textarea.addEventListener('click', (e) => e.stopPropagation());
+    textarea.addEventListener('mousedown', (e) => e.stopPropagation());
+  }
+
+  function hideMarkerPop() {
+    clearPopHideTimer();
+    if (activeMarkerPop) {
+      activeMarkerPop.remove();
+      activeMarkerPop = null;
+      activePopAnnotationId = null;
+      popIsEditing = false;
+    }
+  }
+
+  function scheduleHidePop() {
+    clearPopHideTimer();
+    popHideTimer = setTimeout(() => hideMarkerPop(), 200);
+  }
+
+  function clearPopHideTimer() {
+    if (popHideTimer) {
+      clearTimeout(popHideTimer);
+      popHideTimer = null;
+    }
   }
 
   // ==================== 增强的元素选择器（架构改进2） ====================
 
   function getElementSelector(element) {
+    const iframe = getElementIframe(element);
+    const baseSelector = getElementSelectorInDoc(element);
+    if (!iframe) return baseSelector;
+    // iframe 内元素：生成 IFRAME[src="..."] >> selector 格式
+    const iframeSelector = getElementSelectorInDoc(iframe);
+    return iframeSelector + ' >> ' + baseSelector;
+  }
+
+  function getElementSelectorInDoc(element) {
     // 优先用 ID（最稳定）
     if (element.id) {
       return '#' + cssEscape(element.id);
@@ -1375,18 +1727,39 @@
     return value.replace(/([^\w-])/g, '\\$1');
   }
 
-  // 安全查找元素（容错）
+  // 安全查找元素（容错，支持 iframe）
   function findElementSafe(selector) {
     if (!selector) return null;
+
+    // 检查是否是 iframe 内元素（包含 >> 分隔符）
+    const iframeSplit = selector.indexOf(' >> ');
+    if (iframeSplit !== -1) {
+      const iframeSel = selector.substring(0, iframeSplit);
+      const innerSel = selector.substring(iframeSplit + 4);
+      try {
+        const iframe = document.querySelector(iframeSel);
+        if (iframe && iframe.contentDocument) {
+          return queryWithFallback(iframe.contentDocument, innerSel);
+        }
+      } catch (e) {
+        console.warn('[Review Extension V2] iframe selector failed:', e.message);
+      }
+      return null;
+    }
+
+    return queryWithFallback(document, selector);
+  }
+
+  function queryWithFallback(doc, selector) {
     try {
-      return document.querySelector(selector);
+      return doc.querySelector(selector);
     } catch (e) {
       console.warn('[Review Extension V2]', t('selectorFailed'), selector, e.message);
       // 备用：去掉类名部分，只用标签 + nth-child
       try {
         const simplified = selector.replace(/\.[^:>\s]+/g, '');
         if (simplified !== selector) {
-          return document.querySelector(simplified);
+          return doc.querySelector(simplified);
         }
       } catch (e2) {
         console.warn('[Review Extension V2]', t('backupFailed'), e2.message);
@@ -1547,7 +1920,7 @@
 
     // 优先从运行时映射获取，其次通过 selector 查找
     let element = annotationElementMap.get(annotationId);
-    if (!element || !document.body.contains(element)) {
+    if (!element || !elementIsInDOM(element)) {
       element = findElementSafe(annotation.selector);
       if (element) {
         annotationElementMap.set(annotationId, element);
@@ -1691,6 +2064,198 @@
     textarea.select();
   }
 
+  // ==================== 备份菜单 ====================
+  function showBackupMenu() {
+    // 移除已有的菜单
+    const existing = document.querySelector('.dq-review-backup-menu');
+    if (existing) { existing.remove(); return; }
+
+    const menu = document.createElement('div');
+    menu.className = 'dq-review-backup-menu';
+    menu.innerHTML = `
+      <div class="dq-review-backup-menu-title">${t('backupTitle')}</div>
+      <button class="dq-review-backup-menu-item" id="reviewBackupJsonBtn">${t('backupToJson')}</button>
+      <button class="dq-review-backup-menu-item" id="reviewBackupHtmlBtn">${t('backupToHtml')}</button>
+      <button class="dq-review-backup-menu-item" id="reviewRestoreBtn">${t('restoreFromBackup')}</button>
+    `;
+
+    // 定位到备份按钮上方
+    const backupBtn = document.getElementById('reviewBackupBtn');
+    const btnRect = backupBtn.getBoundingClientRect();
+    menu.style.position = 'fixed';
+    menu.style.left = `${btnRect.left}px`;
+    menu.style.bottom = `${window.innerHeight - btnRect.top + 8}px`;
+    menu.style.zIndex = '2147483647';
+
+    document.body.appendChild(menu);
+
+    document.getElementById('reviewBackupJsonBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      manualJsonBackup();
+      menu.remove();
+    });
+
+    document.getElementById('reviewBackupHtmlBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      exportHtmlWithReviews();
+      menu.remove();
+    });
+
+    document.getElementById('reviewRestoreBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      restoreFromFileInput();
+      menu.remove();
+    });
+
+    // 点击其他区域关闭菜单
+    const closeMenu = (e) => {
+      if (!menu.contains(e.target) && e.target !== backupBtn) {
+        menu.remove();
+        document.removeEventListener('click', closeMenu, true);
+      }
+    };
+    setTimeout(() => document.addEventListener('click', closeMenu, true), 0);
+  }
+
+  // 手动触发 JSON 备份（不受每日一次限制）
+  function manualJsonBackup() {
+    if (annotations.length === 0) {
+      showToast(t('noCommentsToExport'));
+      return;
+    }
+
+    const backupData = {
+      storageKey: getStorageKey(),
+      annotations,
+      currentId: currentAnnotationId,
+      pageUrl: window.location.href,
+      pageTitle: document.title,
+      backupDate: new Date().toISOString().slice(0, 10),
+      backupTime: new Date().toISOString()
+    };
+
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const pageName = window.location.pathname.split('/').pop().replace('.html', '') || 'prototype';
+    const today = new Date().toISOString().slice(0, 10);
+    const filename = `${pageName}-review-backup-${today}.json`;
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast(t('jsonBackupDone'));
+  }
+
+  // 从文件恢复评审数据
+  function restoreFromFileInput() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,.html';
+    input.className = 'dq-review-file-input';
+    input.style.display = 'none';
+
+    input.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const content = ev.target.result;
+
+        try {
+          let restoredData = null;
+
+          if (file.name.endsWith('.json')) {
+            restoredData = JSON.parse(content);
+          } else if (file.name.endsWith('.html')) {
+            const match = content.match(/<!-- REVIEW_EXTENSION_DATA\n([\s\S]*?)\nEND_REVIEW_EXTENSION_DATA -->/);
+            if (match) {
+              restoredData = JSON.parse(match[1]);
+            }
+          }
+
+          if (restoredData && restoredData.annotations && restoredData.annotations.length > 0) {
+            const doRestore = () => {
+              annotations = restoredData.annotations;
+              currentAnnotationId = restoredData.currentId || restoredData.annotations.length;
+              saveAnnotations();
+              showToast(`${t('backupRestored')}（${annotations.length} ${t('commentsCount')}）`);
+              // 刷新角标和标注
+              updateCommentBadge();
+              rebuildAndShowMarkers();
+              updateCommentList();
+            };
+
+            // 校验备份是否属于当前页面
+            const currentKey = getStorageKey();
+            const backupKey = restoredData.storageKey || '';
+            if (backupKey && backupKey !== currentKey) {
+              const backupInfo = restoredData.pageTitle || backupKey;
+              const currentInfo = document.title || currentKey;
+              showRestoreConfirmDialog(backupInfo, currentInfo, doRestore);
+            } else {
+              doRestore();
+            }
+          } else {
+            showToast(t('noBackupFound'));
+          }
+        } catch (err) {
+          console.error('[Review Extension V2] restore error:', err);
+          showToast(t('noBackupFound'));
+        }
+      };
+
+      reader.readAsText(file);
+      input.remove();
+    });
+
+    document.body.appendChild(input);
+    input.click();
+  }
+
+  // 备份来源不匹配时的自定义确认弹窗（复用导出弹窗样式）
+  function showRestoreConfirmDialog(backupInfo, currentInfo, onConfirm) {
+    const dialog = document.createElement('div');
+    dialog.className = 'dq-review-export-dialog';
+    dialog.innerHTML = `
+      <div class="dq-review-export-overlay"></div>
+      <div class="dq-review-export-content" style="max-width:420px">
+        <div class="dq-review-export-header">
+          <span>${t('backupMismatchTitle')}</span>
+          <button class="dq-review-close-btn" id="reviewCloseMismatchBtn">×</button>
+        </div>
+        <div class="dq-review-export-body" style="padding:20px 24px;font-size:14px;line-height:1.8;color:#374151">
+          <p style="margin:0 0 12px"><b>${t('backupSource')}</b>${escapeHtml(backupInfo)}</p>
+          <p style="margin:0 0 16px"><b>${t('currentPage')}</b>${escapeHtml(currentInfo)}</p>
+          <p style="margin:0;color:#6b7280">${t('backupMismatchConfirm')}</p>
+        </div>
+        <div class="dq-review-export-footer">
+          <button class="dq-review-btn dq-review-btn-secondary" id="reviewMismatchCancelBtn">${t('cancel')}</button>
+          <button class="dq-review-btn dq-review-btn-primary" id="reviewMismatchConfirmBtn">${t('confirmRestore')}</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(dialog);
+
+    const closeDialog = () => dialog.remove();
+
+    document.getElementById('reviewCloseMismatchBtn').addEventListener('click', closeDialog);
+    document.getElementById('reviewMismatchCancelBtn').addEventListener('click', closeDialog);
+    dialog.querySelector('.dq-review-export-overlay').addEventListener('click', closeDialog);
+
+    document.getElementById('reviewMismatchConfirmBtn').addEventListener('click', () => {
+      closeDialog();
+      onConfirm();
+    });
+  }
+
   // ==================== 导出对话框 ====================
   function showExportDialog() {
     if (annotations.length === 0) {
@@ -1828,28 +2393,32 @@
 
     markdown += `## ${t('reviewOpinions')}\n\n`;
 
+    // 生成单条评审记录的 markdown
+    function formatAnnotation(a, index) {
+      // 获取标注元素的 HTML 开标签
+      const elementTag = getElementOpenTag(a);
+      markdown += `#### ${index + 1}. [${a.type}]`;
+      if (elementTag) {
+        markdown += ` \`${elementTag}\``;
+      }
+      markdown += `\n\n`;
+      // 内容：输出全部文本（标题行 + 剩余行）
+      markdown += `${a.content.trim()}\n\n`;
+    }
+
     if (p0.length > 0) {
       markdown += `### ${t('p0Must')}\n\n`;
-      p0.forEach((a, index) => {
-        markdown += `#### ${index + 1}. [${a.type}] ${a.content.split('\n')[0]}\n\n`;
-        markdown += `${a.content}\n\n`;
-      });
+      p0.forEach((a, index) => formatAnnotation(a, index));
     }
 
     if (p1.length > 0) {
       markdown += `### ${t('p1Should')}\n\n`;
-      p1.forEach((a, index) => {
-        markdown += `#### ${index + 1}. [${a.type}] ${a.content.split('\n')[0]}\n\n`;
-        markdown += `${a.content}\n\n`;
-      });
+      p1.forEach((a, index) => formatAnnotation(a, index));
     }
 
     if (p2.length > 0) {
       markdown += `### ${t('p2Optional')}\n\n`;
-      p2.forEach((a, index) => {
-        markdown += `#### ${index + 1}. [${a.type}] ${a.content.split('\n')[0]}\n\n`;
-        markdown += `${a.content}\n\n`;
-      });
+      p2.forEach((a, index) => formatAnnotation(a, index));
     }
 
     if (annotations.length === 0) {
@@ -1857,6 +2426,52 @@
     }
 
     return markdown;
+  }
+
+  // ==================== 获取元素开标签 ====================
+  // 根据 annotation 的 selector 找到目标元素，提取其开标签（含关键属性）
+  function getElementOpenTag(annotation) {
+    if (!annotation.selector) return '';
+    try {
+      const element = findElementSafe(annotation.selector);
+      if (!element) return '';
+
+      const tag = element.tagName.toLowerCase();
+      // 收集关键属性：class, id, name, type, role, data-* 等
+      const attrNames = ['class', 'id', 'name', 'type', 'role', 'placeholder', 'href', 'src'];
+      let attrs = '';
+
+      for (const name of attrNames) {
+        const val = element.getAttribute(name);
+        if (val) {
+          // 过滤掉插件自身的 dq-review- 类名
+          if (name === 'class') {
+            const filtered = val.split(/\s+/)
+              .filter(c => c && !c.startsWith('dq-review-'))
+              .join(' ');
+            if (filtered) {
+              attrs += ` class="${filtered}"`;
+            }
+          } else {
+            attrs += ` ${name}="${val}"`;
+          }
+        }
+      }
+
+      // 补充 data-* 属性
+      if (element.dataset) {
+        for (const [key, val] of Object.entries(element.dataset)) {
+          if (val && !key.startsWith('dqReview')) {
+            attrs += ` data-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}="${val}"`;
+          }
+        }
+      }
+
+      return `<${tag}${attrs}>`;
+    } catch (e) {
+      console.warn('[Review Extension V2] getElementOpenTag failed:', e.message);
+      return '';
+    }
   }
 
   // ==================== 工具函数 ====================
@@ -1921,19 +2536,188 @@
 
   function saveAnnotations() {
     const storageKey = getStorageKey();
-    chrome.storage.local.set({
+    const data = {
       [`annotations_${storageKey}`]: annotations,
       [`currentId_${storageKey}`]: currentAnnotationId
-    });
+    };
+
+    // 方案 1：同时写入 local 和 sync
+    chrome.storage.local.set(data);
+    syncToCloud(storageKey);
+
     console.log(`[Review Extension V2] ${t('savedTo')}: ${storageKey}`);
+  }
+
+  // ==================== 方案 1：chrome.storage.sync 云端同步 ====================
+
+  // sync 单个 key 上限 8KB，总量 100KB，需要分片
+  function syncToCloud(storageKey) {
+    try {
+      const dataStr = JSON.stringify({ annotations, currentId: currentAnnotationId });
+      const CHUNK_SIZE = 7000; // 留点余量，单 key 上限 8192 字节
+      const chunks = [];
+
+      for (let i = 0; i < dataStr.length; i += CHUNK_SIZE) {
+        chunks.push(dataStr.substring(i, i + CHUNK_SIZE));
+      }
+
+      const syncData = { [`sync_meta_${storageKey}`]: { chunks: chunks.length, timestamp: Date.now() } };
+      chunks.forEach((chunk, index) => {
+        syncData[`sync_${storageKey}_${index}`] = chunk;
+      });
+
+      chrome.storage.sync.set(syncData, () => {
+        if (chrome.runtime.lastError) {
+          console.warn(`[Review Extension V2] ${t('syncFailed')}:`, chrome.runtime.lastError.message);
+        } else {
+          console.log(`[Review Extension V2] ${t('syncSaved')} (${chunks.length} chunks)`);
+        }
+      });
+    } catch (e) {
+      console.warn('[Review Extension V2] sync error:', e);
+    }
+  }
+
+  function loadFromSync(storageKey, callback) {
+    const metaKey = `sync_meta_${storageKey}`;
+    chrome.storage.sync.get(metaKey, (result) => {
+      const meta = result[metaKey];
+      if (!meta || !meta.chunks) {
+        callback(null);
+        return;
+      }
+
+      const chunkKeys = [];
+      for (let i = 0; i < meta.chunks; i++) {
+        chunkKeys.push(`sync_${storageKey}_${i}`);
+      }
+
+      chrome.storage.sync.get(chunkKeys, (chunkResult) => {
+        try {
+          let dataStr = '';
+          for (let i = 0; i < meta.chunks; i++) {
+            dataStr += chunkResult[`sync_${storageKey}_${i}`] || '';
+          }
+          const data = JSON.parse(dataStr);
+          callback(data);
+        } catch (e) {
+          console.warn('[Review Extension V2] sync parse error:', e);
+          callback(null);
+        }
+      });
+    });
+  }
+
+  // ==================== 方案 2：每日自动 JSON 备份 ====================
+
+
+  // ==================== 方案 3：导出嵌入评审数据的 HTML 副本 ====================
+
+  function exportHtmlWithReviews() {
+    if (annotations.length === 0) {
+      showToast(t('noCommentsToExport'));
+      return;
+    }
+
+    const reviewData = {
+      version: VERSION,
+      storageKey: getStorageKey(),
+      annotations,
+      currentId: currentAnnotationId,
+      pageUrl: window.location.href,
+      exportDate: new Date().toISOString()
+    };
+
+    const dataComment = `<!-- REVIEW_EXTENSION_DATA\n${JSON.stringify(reviewData, null, 2)}\nEND_REVIEW_EXTENSION_DATA -->`;
+
+    // 克隆当前页面 HTML
+    const doctype = document.doctype
+      ? `<!DOCTYPE ${document.doctype.name}${document.doctype.publicId ? ` PUBLIC "${document.doctype.publicId}"` : ''}${document.doctype.systemId ? ` "${document.doctype.systemId}"` : ''}>`
+      : '<!DOCTYPE html>';
+
+    const htmlClone = document.documentElement.cloneNode(true);
+
+    // 移除插件注入的所有 UI 元素
+    htmlClone.querySelectorAll('[class^="dq-review"]').forEach(el => el.remove());
+
+    const fullHtml = `${doctype}\n${dataComment}\n${htmlClone.outerHTML}`;
+
+    const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const pageName = window.location.pathname.split('/').pop() || 'index.html';
+    const today = new Date().toISOString().slice(0, 10);
+    const filename = `${pageName.replace('.html', '')}-with-reviews-${today}.html`;
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast(t('htmlExported'));
+  }
+
+  // ==================== 从 HTML 注释恢复评审数据 ====================
+
+  function loadFromHtmlComments() {
+    const html = document.documentElement.outerHTML;
+    const match = html.match(/<!-- REVIEW_EXTENSION_DATA\n([\s\S]*?)\nEND_REVIEW_EXTENSION_DATA -->/);
+    if (!match) return null;
+
+    try {
+      return JSON.parse(match[1]);
+    } catch (e) {
+      console.warn('[Review Extension V2] HTML comment parse error:', e);
+      return null;
+    }
   }
 
   function loadAnnotations() {
     const storageKey = getStorageKey();
+
+    // 优先从 chrome.storage.local 加载
     chrome.storage.local.get([`annotations_${storageKey}`, `currentId_${storageKey}`], (result) => {
-      annotations = result[`annotations_${storageKey}`] || [];
-      currentAnnotationId = result[`currentId_${storageKey}`] || 0;
-      console.log(`[Review Extension V2] ${t('loadedFrom')} ${storageKey} ${t('loadedComments')} ${annotations.length} ${t('commentsCount')}`);
+      const localAnnotations = result[`annotations_${storageKey}`] || [];
+      const localCurrentId = result[`currentId_${storageKey}`] || 0;
+
+      if (localAnnotations.length > 0) {
+        // 本地有数据，直接使用
+        annotations = localAnnotations;
+        currentAnnotationId = localCurrentId;
+        console.log(`[Review Extension V2] ${t('loadedFrom')} local: ${annotations.length} ${t('commentsCount')}`);
+        return;
+      }
+
+      // 本地无数据，尝试从 HTML 注释恢复
+      const htmlData = loadFromHtmlComments();
+      if (htmlData && htmlData.annotations && htmlData.annotations.length > 0) {
+        annotations = htmlData.annotations;
+        currentAnnotationId = htmlData.currentId || htmlData.annotations.length;
+        saveAnnotations(); // 写回 local
+        console.log(`[Review Extension V2] ${t('dataRestoredFromHtml')}: ${annotations.length} ${t('commentsCount')}`);
+        showToast(`${t('dataRestoredFromHtml')}（${annotations.length} ${t('commentsCount')}）`);
+        return;
+      }
+
+      // HTML 也无数据，尝试从 sync 恢复
+      loadFromSync(storageKey, (syncData) => {
+        if (syncData && syncData.annotations && syncData.annotations.length > 0) {
+          annotations = syncData.annotations;
+          currentAnnotationId = syncData.currentId || syncData.annotations.length;
+          // 写回 local
+          chrome.storage.local.set({
+            [`annotations_${storageKey}`]: annotations,
+            [`currentId_${storageKey}`]: currentAnnotationId
+          });
+          console.log(`[Review Extension V2] ${t('dataRestoredFromSync')}: ${annotations.length} ${t('commentsCount')}`);
+          showToast(`${t('dataRestoredFromSync')}（${annotations.length} ${t('commentsCount')}）`);
+        } else {
+          console.log(`[Review Extension V2] ${t('loadedFrom')} ${storageKey}: 0 ${t('commentsCount')}`);
+        }
+      });
     });
   }
 

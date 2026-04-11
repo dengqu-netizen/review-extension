@@ -770,6 +770,97 @@ textarea.dq-review-form-control {
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.5);
 }
 
+/* ==================== 角标 Pop 弹窗 ==================== */
+.dq-review-marker-pop {
+  position: fixed !important;
+  z-index: 2147483647 !important;
+  width: max-content !important;
+  max-width: 320px !important;
+  min-width: 120px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: #fff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  pointer-events: auto !important;
+  overflow: visible !important;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.dq-review-marker-pop.dq-pop-visible {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+.dq-review-marker-pop-content {
+  padding: 0 !important;
+  margin: 0 !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  color: #1f2937 !important;
+  background: transparent !important;
+  cursor: pointer !important;
+  word-break: break-word !important;
+  white-space: pre-wrap !important;
+  max-height: 150px !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
+}
+
+.dq-review-marker-pop-edit {
+  display: block !important;
+  width: 100% !important;
+  min-width: 200px !important;
+  min-height: 56px !important;
+  max-height: 160px !important;
+  padding: 8px 10px !important;
+  margin: 0 !important;
+  border: 1.5px solid #d1d5db !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  font-family: inherit !important;
+  color: #1f2937 !important;
+  background: #f9fafb !important;
+  resize: vertical !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.dq-review-marker-pop-edit:focus {
+  border-color: #667eea !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15) !important;
+}
+
+/* 小三角箭头 */
+.dq-review-marker-pop-arrow {
+  position: absolute !important;
+  width: 10px !important;
+  height: 10px !important;
+  background: #fff !important;
+  border: 1px solid #e5e7eb !important;
+  transform: rotate(45deg) !important;
+  pointer-events: none !important;
+}
+
+.dq-review-marker-pop-arrow.dq-arrow-bottom {
+  bottom: -6px !important;
+  border-top: none !important;
+  border-left: none !important;
+}
+
+.dq-review-marker-pop-arrow.dq-arrow-top {
+  top: -6px !important;
+  border-bottom: none !important;
+  border-right: none !important;
+}
+
 /* ==================== 评论列表面板 ==================== */
 .dq-review-comment-list {
   position: fixed;
@@ -1023,6 +1114,57 @@ textarea.dq-review-form-control {
   margin-bottom: 0;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+/* ==================== 备份菜单 ==================== */
+.dq-review-backup-menu {
+  all: initial;
+  position: fixed !important;
+  background: white !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+  padding: 8px 0 !important;
+  min-width: 180px !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  z-index: 2147483647 !important;
+  animation: dq-review-fade-in 0.15s ease !important;
+}
+
+.dq-review-backup-menu-title {
+  all: initial;
+  display: block !important;
+  padding: 8px 16px 6px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #9ca3af !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  font-family: inherit !important;
+}
+
+.dq-review-backup-menu-item {
+  all: initial;
+  display: block !important;
+  width: 100% !important;
+  padding: 8px 16px !important;
+  font-size: 14px !important;
+  color: #374151 !important;
+  background: none !important;
+  border: none !important;
+  cursor: pointer !important;
+  text-align: left !important;
+  font-family: inherit !important;
+  box-sizing: border-box !important;
+}
+
+.dq-review-backup-menu-item:hover {
+  background: #f3f4f6 !important;
+  color: #667eea !important;
+}
+
+@keyframes dq-review-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ==================== 导出对话框 ==================== */

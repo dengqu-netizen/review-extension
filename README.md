@@ -106,6 +106,18 @@
 
 欢迎提交 Issue 和 Pull Request！
 
+### 📦 更新日志
+
+#### v2.8.0（2026-04-11）
+- 🖼️ **iframe 嵌套页面兼容**：支持在 iframe 内的页面进行评审标注
+- 💾 **备份与恢复**：新增 JSON 备份、HTML 评审副本导出和备份恢复功能，避免评论数据丢失；恢复时自动校验来源页面，防止误导入
+- 💬 **角标悬浮弹窗**：鼠标悬停角标显示评论内容，点击可内联编辑
+
+#### v2.7.0
+- 🎭 主题切换彩蛋 + 角标 Q 弹入场动画
+- 🌗 自动主题切换（检测页面背景色）
+- 🎨 自定义下拉框、UI 优化
+
 ### ⚠️ 免责声明
 
 本插件仅供合法用途，使用风险自担，开发者不对使用导致的任何损失负责。
@@ -196,6 +208,18 @@ This project is licensed under the [MIT License](LICENSE).
 ### 🤝 Contributing
 
 Issues and Pull Requests are welcome!
+
+### 📦 Changelog
+
+#### v2.8.0 (2026-04-11)
+- 🖼️ **iframe Support**: Review and annotate pages inside iframes
+- 💾 **Backup & Restore**: Export JSON backups, HTML review copies, and restore from backups to prevent data loss; auto-validates backup source to prevent mismatched imports
+- 💬 **Marker Hover Popup**: Hover over badges to preview comments, click to edit inline
+
+#### v2.7.0
+- 🎭 Theme switch easter egg + bouncy badge entrance animation
+- 🌗 Auto theme switching (detects page background color)
+- 🎨 Custom dropdowns, UI improvements
 
 ### ⚠️ Disclaimer
 
