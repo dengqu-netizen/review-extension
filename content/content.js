@@ -981,8 +981,7 @@
     hideMarkerPop();
 
     if (commentDialog) {
-      commentDialog.remove();
-      commentDialog = null;
+      closeCommentDialog();
     }
 
     const btn = document.getElementById('reviewToggleBtn');
@@ -1132,9 +1131,13 @@
   function handleElementClick(e) {
     if (!isReviewMode) return;
 
+    // 先判断是否评审工具自身的 UI 元素（必须在 isConnected 检查之前，以处理菜单已移除的边缘情况）
+    if (isReviewUIElement(e.target)) {
+      return;
+    }
+
     // 如果目标元素已从 DOM 移除（如备份菜单项被 closeMenu 先移除），跳过
     if (!document.contains(e.target)) return;
-    if (isReviewUIElement(e.target)) return;
     // 跳过隐藏元素和下载链接（备份/导出功能通过程序化 .click() 触发的）
     if (e.target.style.display === 'none' || e.target.hasAttribute('download')) return;
     if (e.target === document.body || e.target === document.documentElement) return;
@@ -1156,10 +1159,21 @@
   }
 
   // ==================== 评论对话框 ====================
-  function showCommentDialog(element) {
+  function setReviewPanelPointerEvents(disabled) {
+    if (!reviewPanel) return;
+    reviewPanel.style.pointerEvents = disabled ? 'none' : '';
+  }
+
+  function closeCommentDialog() {
     if (commentDialog) {
       commentDialog.remove();
+      commentDialog = null;
     }
+    setReviewPanelPointerEvents(false);
+  }
+
+  function showCommentDialog(element) {
+    closeCommentDialog();
 
     commentDialog = document.createElement('div');
     commentDialog.className = 'dq-review-comment-dialog';
@@ -1236,10 +1250,10 @@
 
     commentDialog.style.left = left + 'px';
     commentDialog.style.top = top + 'px';
+    setReviewPanelPointerEvents(true);
 
     document.getElementById('reviewCancelBtn').addEventListener('click', () => {
-      commentDialog.remove();
-      commentDialog = null;
+      closeCommentDialog();
       hideSelectOverlay();
     });
 
@@ -1334,8 +1348,7 @@
     // 创建角标（不会被销毁，只切换显示）
     createMarker(annotation, element);
 
-    commentDialog.remove();
-    commentDialog = null;
+    closeCommentDialog();
 
     hideSelectOverlay();
     updateCommentBadge();
