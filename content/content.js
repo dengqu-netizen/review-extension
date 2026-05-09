@@ -1003,7 +1003,6 @@
           if (!isReviewMode) return;
           const target = e.target;
           if (target === iframeDoc.body || target === iframeDoc.documentElement) return;
-          e.preventDefault();
           e.stopPropagation();
           hideHoverOverlay();
           hoveredElement = null;
@@ -1143,7 +1142,6 @@
     if (e.target.style.display === 'none' || e.target.hasAttribute('download')) return;
     if (e.target === document.body || e.target === document.documentElement) return;
 
-    e.preventDefault();
     e.stopPropagation();
 
     hideHoverOverlay();
